@@ -51,7 +51,7 @@ test('must pass name', async t=> {
 
 test('destroy said app with our nuke module', t=> {
   t.plan(1)
-  nuke({ name: appname }, function nuked(err) {
+  nuke({ name: appname, force: true }, function nuked(err) {
     if (err) t.fail(err)
     else t.ok(true)
   })
@@ -76,37 +76,3 @@ test('verify said app is actually nuked', t=> {
     }
   })
 })
-
-
-
-
-
-
-
-/**
- *
-test('promise code', async t=> {
-  t.plan(1)
-  let result = await nuke()
-  console.log(result)
-  t.ok(true)
-})
-
-test('promise code 1', t=> {
-  t.plan(1)
-  nuke().then(function(result) {
-    console.log('second one result', result)
-    t.ok(true)
-  }).catch(function(err) {
-    console.log(err)
-    t.ok(true)
-  })
-})
-
-test('callback path', t=> {
-  t.plan(1)
-  nuke({}, function(err, values) {
-    console.log(err, values)
-    t.ok(true)
-  })
-}) */

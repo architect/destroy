@@ -1,21 +1,20 @@
 {
-  "name": "core-nuke",
+  "name": "@architect/destroy",
   "version": "1.0.0",
-  "description": "",
+  "description": "Delete a CloudFormation stack generated with Architect",
   "main": "src/index.js",
   "scripts": {
     "t": "tape test/scratch.js | tap-spec",
     "test": "tape test/*-test.js | tap-spec"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@architect/deploy": "^1.6.0",
     "tap-spec": "^5.0.0",
     "tape": "^4.13.2"
   },
   "dependencies": {
+    "aws-sdk": "^2.660.0",
     "run-waterfall": "^1.1.6"
   }
 }
