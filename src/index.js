@@ -59,7 +59,7 @@ module.exports = function nuke(params, callback) {
       }
       else if (bucketExists && force === false) {
         // throw a big error here
-        callback(Error('found bucket, use --force to delete')) 
+        callback(Error('bucket_exists')) 
       }
       else {
         console.log('no bucket wtf?')
@@ -84,7 +84,7 @@ module.exports = function nuke(params, callback) {
 
     function(hasTables, callback) {
       if (hasTables && force === false) {
-        callback(Error('found tables, use --force to delete'))
+        callback(Error('table_exists'))
       }
       else {
         // got this far, delete everything

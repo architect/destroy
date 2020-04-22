@@ -22,16 +22,21 @@ module.exports = function deleteBucketContents({ bucket }, callback) {
     },
 
     function(stuffToDelete, callback) {
-      s3.deleteObjects({
-        Bucket: bucket , 
-        Delete: {
-          Objects: stuffToDelete
-        }
-      },
-      function done(err) {
-        if (err) callback(err)
-        else callback()
-      })
+      if (Array.isArray(stuffToDelete) && stuffToDelete.length > 0) {
+        s3.deleteObjects({
+          Bucket: bucket , 
+          Delete: {
+            Objects: stuffToDelete
+          }
+        },
+        function done(err) {
+          if (err) callback(err)
+          else callback()
+        })
+      }
+      else {
+        callback()
+      }
     }
   ], callback)
 }

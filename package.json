@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "Delete a CloudFormation stack generated with Architect",
   "main": "src/index.js",
+  "bin": {
+    "arc-destroy": "src/cli.js"
+  },
   "scripts": {
-    "t": "tape test/scratch.js | tap-spec",
     "test": "tape test/*-test.js | tap-spec"
   },
   "license": "Apache-2.0",
@@ -14,6 +16,7 @@
     "tape": "^4.13.2"
   },
   "dependencies": {
+    "@architect/parser": "^2.1.3",
     "aws-sdk": "^2.660.0",
     "run-waterfall": "^1.1.6"
   }
