@@ -12,9 +12,20 @@ A stack is a collection of AWS resources that you can manage as a single unit. I
 npm i @architect/destroy
 let destroy = require('@architect/destroy')
 ```
-### Requirements
 
-## API
+# API
+
+## `destroy.dirty(callback)`
+
+Destroys Function code to the staging environment _by ommitting CloudFormation
+and messing with Lambda infrastructure directly_. There's a reason we called
+this `dirty`. Hey, it works, and it's much faster.
+
+## `destroy.sam({verbose, production}, callback)`
+
+Destroys all infrastructure associated to your @architect app.
+
+Set `verbose` to truthy to enable chatty mode. By default will only push to the staging environment unless `production` is truthy.
 
 
 
