@@ -1,14 +1,14 @@
 let aws = require('aws-sdk')
 let waterfall = require('run-waterfall')
 
-module.exports = function deleteBucketContents({ bucket }, callback) {
+module.exports = function deleteBucketContents ({ bucket }, callback) {
 
-  let region = process.env.AWS_REGION 
+  let region = process.env.AWS_REGION
   let s3 = new aws.S3({ region })
 
   waterfall([
-    function(callback) {
-      s3.listObjectsV2({ Bucket: bucket }, function done(err, result) {
+    function (callback) {
+      s3.listObjectsV2({ Bucket: bucket }, function done (err, result) {
         if (err) {
           callback(err)
         }
@@ -16,20 +16,20 @@ module.exports = function deleteBucketContents({ bucket }, callback) {
           throw Error('bucket has too many objects to delete')
         }
         else {
-          callback(null, result.Contents.map(item=> ({ Key: item.Key })))
+          callback(null, result.Contents.map(item => ({ Key: item.Key })))
         }
       })
     },
 
-    function(stuffToDelete, callback) {
+    function (stuffToDelete, callback) {
       if (Array.isArray(stuffToDelete) && stuffToDelete.length > 0) {
         s3.deleteObjects({
-          Bucket: bucket , 
+          Bucket: bucket,
           Delete: {
             Objects: stuffToDelete
           }
         },
-        function done(err) {
+        function done (err) {
           if (err) callback(err)
           else callback()
         })

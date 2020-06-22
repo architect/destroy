@@ -7,63 +7,63 @@ let nuke = require('..')
 // this is important
 const appname = 'NukeTestingStaging'
 
-test('env', t=> {
+test('env', t => {
   t.plan(2)
   t.ok(nuke, 'nuke')
   t.ok(deploy, 'deploy')
 })
 
-test('create the app', t=> {
+test('create the app', t => {
   t.plan(1)
   let mockdir = path.join(__dirname, 'mock')
   process.chdir(mockdir)
-  deploy.sam({ tags: [] }, function errback(err) {
+  deploy.sam({ tags: [] }, function errback (err) {
     if (err) {
       t.fail(err)
     }
     else {
       t.ok(true)
     }
-  }) 
+  })
 })
 
-test('verify the app did actually get really created', t=> {
+test('verify the app did actually get really created', t => {
   t.plan(1)
   let cloudformation = new aws.CloudFormation
   cloudformation.describeStacks({
     StackName: appname
-  }, 
-  function(err, data) {
+  },
+  function (err, data) {
     if (err) t.fail(err)
     else t.ok(data.Stacks[0].StackName === appname, 'got the stack')
   })
 })
 
-test('must pass name', async t=> {
+test('must pass name', async t => {
   t.plan(1)
   try {
     await nuke({})
   }
-  catch(e) {
+  catch (e) {
     t.ok(true, 'caught missing name')
   }
 })
 
-test('destroy said app with our nuke module', t=> {
+test('destroy said app with our nuke module', t => {
   t.plan(1)
-  nuke({ name: appname, force: true }, function nuked(err) {
+  nuke({ name: appname, force: true }, function nuked (err) {
     if (err) t.fail(err)
     else t.ok(true)
   })
 })
 
-test('verify said app is actually nuked', t=> {
+test('verify said app is actually nuked', t => {
   t.plan(1)
   let cloudformation = new aws.CloudFormation
   cloudformation.describeStacks({
     StackName: appname
-  }, 
-  function(err) {
+  },
+  function (err) {
     let msg = 'Stack with id NukeTestingStaging does not exist'
     if (err && err.code == 'ValidationError' && err.message == msg) {
       t.ok(true)

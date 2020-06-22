@@ -7,7 +7,7 @@ let deleteBucketContents = require('./_delete-bucket-contents')
  * @param {string} params.name - name of cloudformation stack to delete
  * @param {boolean} params.force - delete regardless of tables or buckets
  */
-module.exports = function nuke(params, callback) {
+module.exports = function nuke (params, callback) {
 
   // deletes buckets and tables with impunity
   let force = params.force || false
@@ -19,8 +19,8 @@ module.exports = function nuke(params, callback) {
   // hack around no native promise in aws-sdk
   let promise
   if (!callback) {
-    promise = new Promise(function ugh(res, rej) {
-      callback = function errback(err, result) {
+    promise = new Promise(function ugh (res, rej) {
+      callback = function errback (err, result) {
         if (err) rej(err)
         else res(result)
       }
@@ -34,32 +34,32 @@ module.exports = function nuke(params, callback) {
   waterfall([
 
     // check for the stack
-    function(callback) {
+    function (callback) {
       cloudformation.describeStacks({
-        StackName: params.name 
-      }, 
-      function(err, data) {
+        StackName: params.name
+      },
+      function (err, data) {
         // console.log(data.Stacks[0].Outputs)
-        if (err) callback(err) 
+        if (err) callback(err)
         else {
-          let bucket = o=> o.OutputKey === 'BucketURL'
-          let hasBucket = data.Stacks[0].Outputs.find(bucket)  
+          let bucket = o => o.OutputKey === 'BucketURL'
+          let hasBucket = data.Stacks[0].Outputs.find(bucket)
           callback(null, hasBucket)
         }
       })
     },
 
     // delete static assets
-    function(bucketExists, callback) {
+    function (bucketExists, callback) {
       if (bucketExists && force) {
         let bucket = bucketExists.OutputValue.replace('http://', '').split('.')[0]
-        deleteBucketContents({ 
+        deleteBucketContents({
           bucket
         }, callback)
       }
       else if (bucketExists && force === false) {
         // throw a big error here
-        callback(Error('bucket_exists')) 
+        callback(Error('bucket_exists'))
       }
       else {
         console.log('no bucket wtf?')
@@ -67,31 +67,31 @@ module.exports = function nuke(params, callback) {
       }
     },
 
-    function(callback) {
+    function (callback) {
       cloudformation.describeStackResources({
-        StackName: params.name 
-      }, 
-      function(err, data) {
+        StackName: params.name
+      },
+      function (err, data) {
         if (err) callback(err)
         else {
-          let type = t=> t.ResourceType
-          let table = i=> i === 'AWS::DynamoDB::Table'
+          let type = t => t.ResourceType
+          let table = i => i === 'AWS::DynamoDB::Table'
           let hasTables = data.StackResources.map(type).some(table)
           callback(null, hasTables)
         }
       })
     },
 
-    function(hasTables, callback) {
+    function (hasTables, callback) {
       if (hasTables && force === false) {
         callback(Error('table_exists'))
       }
       else {
         // got this far, delete everything
         cloudformation.deleteStack({
-          StackName: params.name, 
-        }, 
-        function(err) {
+          StackName: params.name,
+        },
+        function (err) {
           if (err) callback(err)
           else callback()
         })
@@ -99,20 +99,20 @@ module.exports = function nuke(params, callback) {
     },
 
     // poll for progress
-    function(callback) {
+    function (callback) {
       let tries = 1
       let max = 6
-      function checkit() {
+      function checkit () {
         cloudformation.describeStacks({
-          StackName: params.name 
-        }, 
-        function done(err, data) {
-          let msg = `Stack with id ${ params.name } does not exist`
+          StackName: params.name
+        },
+        function done (err) {
+          let msg = `Stack with id ${params.name} does not exist`
           if (err && err.code == 'ValidationError' && err.message == msg) {
             callback() // this is good! its gone...
           }
           else {
-            setTimeout(function delay() {
+            setTimeout(function delay () {
               if (tries === max) {
                 callback(Error('nuke failed; hit max retries'))
               }
@@ -125,7 +125,7 @@ module.exports = function nuke(params, callback) {
         })
       }
       checkit()
-    } 
+    }
 
   ], callback)
 
