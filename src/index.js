@@ -1,20 +1,21 @@
 let aws = require('aws-sdk')
 let waterfall = require('run-waterfall')
 let deleteBucketContents = require('./_delete-bucket-contents')
+let { updater } = require('@architect/utils')
 
 /**
  * @param {object} params - named parameters
  * @param {string} params.name - name of cloudformation stack to delete
- * @param {boolean} params.force - delete regardless of tables or buckets
+ * @param {boolean} params.force - deletes app with impunity, regardless of tables or buckets
  */
 module.exports = function destroy (params, callback) {
-
-  // deletes buckets and tables with impunity
-  let force = params.force || false
+  let { name: StackName, force = false, update } = params
+  if (!update) update = updater('Destroy')
 
   // always validate input
-  if (!params.name)
-    throw ReferenceError('missing params.name')
+  if (!StackName) {
+    throw ReferenceError('Missing params.name')
+  }
 
   // hack around no native promise in aws-sdk
   let promise
@@ -32,14 +33,21 @@ module.exports = function destroy (params, callback) {
   let cloudformation = new aws.CloudFormation({ region })
 
   waterfall([
+    // Warning
+    function (callback) {
+      update.status(`Destroying ${StackName} in 5 seconds...`)
+      setTimeout(() => {
+        update.start(`Destroying ${StackName}...`)
+        callback()
+      }, 5000)
+    },
 
     // check for the stack
     function (callback) {
       cloudformation.describeStacks({
-        StackName: params.name
+        StackName
       },
       function (err, data) {
-        // console.log(data.Stacks[0].Outputs)
         if (err) callback(err)
         else {
           let bucket = o => o.OutputKey === 'BucketURL'
@@ -57,19 +65,18 @@ module.exports = function destroy (params, callback) {
           bucket
         }, callback)
       }
-      else if (bucketExists && force === false) {
+      else if (bucketExists && !force) {
         // throw a big error here
         callback(Error('bucket_exists'))
       }
       else {
-        console.log('no bucket wtf?')
         callback()
       }
     },
 
     function (callback) {
       cloudformation.describeStackResources({
-        StackName: params.name
+        StackName
       },
       function (err, data) {
         if (err) callback(err)
@@ -83,13 +90,13 @@ module.exports = function destroy (params, callback) {
     },
 
     function (hasTables, callback) {
-      if (hasTables && force === false) {
+      if (hasTables && !force) {
         callback(Error('table_exists'))
       }
       else {
         // got this far, delete everything
         cloudformation.deleteStack({
-          StackName: params.name,
+          StackName,
         },
         function (err) {
           if (err) callback(err)
@@ -104,12 +111,13 @@ module.exports = function destroy (params, callback) {
       let max = 6
       function checkit () {
         cloudformation.describeStacks({
-          StackName: params.name
+          StackName
         },
         function done (err) {
-          let msg = `Stack with id ${params.name} does not exist`
+          let msg = `Stack ID ${StackName} does not exist`
           if (err && err.code == 'ValidationError' && err.message == msg) {
-            callback() // this is good! its gone...
+            update.done(`Successfully destroyed ${StackName}`)
+            callback() // this is good! it's gone...
           }
           else {
             setTimeout(function delay () {

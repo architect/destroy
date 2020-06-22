@@ -1,27 +1,45 @@
 #!/usr/bin/env node
-let parser = require('@architect/parser')
-let utils = require('@architect/utils')
+let { read } = require('@architect/parser')
+let { banner, toLogicalID, updater } = require('@architect/utils')
+let { version } = require('../package.json')
+let { arc } = read()
 let destroy = require('./index')
+let update = updater('Destroy')
 
-let forcers = p => [ '-f', '--force', 'force' ].includes(p)
-let force = process.argv.some(forcers)
-let result = parser.read()
-let env = process.env.NODE_ENV === 'production' ? 'production' : 'staging'
-let name = utils.toLogicalID(`${result.arc.app[0]}-${env}`)
+// Args
+let args = process.argv
+
+let findName = p => p === '--name'
+let named = args.includes('--name') && (args[args.findIndex(findName) + 1] === arc.app[0])
+
+let forces = p => [ '-f', '--force', 'force' ].includes(p)
+let force = args.some(forces)
+
+let production = args.includes('--production')
 
 ;(async function main () {
   try {
-    await destroy({ name, force })
-  }
-  catch (e) {
-    if (e && e.message === 'bucket_exists') {
-      console.log('Error! Static bucket exists. Use --force to delete.')
+    banner({ version: `Destroy ${version}` })
+    if (!named) {
+      throw Error('no_name')
     }
-    else if (e && e.message === 'table_exists') {
-      console.log('Error! Table(s) exist. Use --force to delete.')
+    let env = production ? 'production' : 'staging'
+    let name = toLogicalID(`${arc.app[0]}-${env}`)
+    await destroy({ name, force, update })
+  }
+  catch (err) {
+    let { message } = err
+    if (message === 'no_name') {
+      update.error(`If you're really sure you want to destroy this app, run this command with: --name ${arc.app[0]}`)
+    }
+    else if (message === 'bucket_exists') {
+      update.error('Static bucket exists. Use --force to delete.')
+    }
+    else if (message === 'table_exists') {
+      update.error('Table(s) exist. Use --force to delete.')
     }
     else {
-      console.error(e)
+      update.error(err)
     }
   }
 })()
