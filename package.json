@@ -10,25 +10,28 @@
     "lint": "eslint . --fix",
     "test": "npm run lint && npm run test:unit",
     "test:unit": "# TODO add some unit tests, please!",
-    "test:integration": "tape test/*-test.js | tap-spec"
+    "test:integration": "tape test/integration/**/*-test.js | tap-spec"
   },
   "license": "Apache-2.0",
   "engines": {
     "node": ">=10"
   },
   "dependencies": {
-    "@architect/eslint-config": "0.0.1",
     "@architect/parser": "~2.1.5",
     "aws-sdk": "~2.644.0",
-    "eslint": "~7.3.0",
     "run-waterfall": "~1.1.6"
   },
   "devDependencies": {
+    "@architect/eslint-config": "0.0.1",
     "@architect/deploy": "^1.8.0",
+    "eslint": "~7.3.0",
     "tap-spec": "^5.0.0",
     "tape": "^5.0.1"
   },
   "eslintConfig": {
     "extends": "@architect/eslint-config"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -2,7 +2,7 @@ let aws = require('aws-sdk')
 let path = require('path')
 let test = require('tape')
 let deploy = require('@architect/deploy')
-let destroy = require('..')
+let destroy = require('../..')
 
 // this is important
 const appname = 'DestroyTestingStaging'
@@ -15,7 +15,7 @@ test('env', t => {
 
 test('create the app', t => {
   t.plan(1)
-  let mockdir = path.join(__dirname, 'mock')
+  let mockdir = path.join(__dirname, '..', 'mock')
   process.chdir(mockdir)
   deploy.sam({ tags: [] }, function errback (err) {
     if (err) {
