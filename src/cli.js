@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 let parser = require('@architect/parser')
 let utils = require('@architect/utils')
-let nuke = require('./index')
+let destroy = require('./index')
 
 let forcers = p => [ '-f', '--force', 'force' ].includes(p)
 let force = process.argv.some(forcers)
@@ -11,7 +11,7 @@ let name = utils.toLogicalID(`${result.arc.app[0]}-${env}`)
 
 ;(async function main () {
   try {
-    await nuke({ name, force })
+    await destroy({ name, force })
   }
   catch (e) {
     if (e && e.message === 'bucket_exists') {

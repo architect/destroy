@@ -7,7 +7,7 @@ let deleteBucketContents = require('./_delete-bucket-contents')
  * @param {string} params.name - name of cloudformation stack to delete
  * @param {boolean} params.force - delete regardless of tables or buckets
  */
-module.exports = function nuke (params, callback) {
+module.exports = function destroy (params, callback) {
 
   // deletes buckets and tables with impunity
   let force = params.force || false
@@ -114,7 +114,7 @@ module.exports = function nuke (params, callback) {
           else {
             setTimeout(function delay () {
               if (tries === max) {
-                callback(Error('nuke failed; hit max retries'))
+                callback(Error('Destroy failed; hit max retries'))
               }
               else {
                 tries += 1

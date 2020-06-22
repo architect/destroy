@@ -1,5 +1,5 @@
 @app
-nuke-testing
+destroy-testing
 
 @http
 get /

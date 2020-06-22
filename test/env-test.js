@@ -2,14 +2,14 @@ let aws = require('aws-sdk')
 let path = require('path')
 let test = require('tape')
 let deploy = require('@architect/deploy')
-let nuke = require('..')
+let destroy = require('..')
 
 // this is important
-const appname = 'NukeTestingStaging'
+const appname = 'DestroyTestingStaging'
 
 test('env', t => {
   t.plan(2)
-  t.ok(nuke, 'nuke')
+  t.ok(destroy, 'destroy')
   t.ok(deploy, 'deploy')
 })
 
@@ -42,29 +42,29 @@ test('verify the app did actually get really created', t => {
 test('must pass name', async t => {
   t.plan(1)
   try {
-    await nuke({})
+    await destroy({})
   }
   catch (e) {
     t.ok(true, 'caught missing name')
   }
 })
 
-test('destroy said app with our nuke module', t => {
+test('destroy said app with our destroy module', t => {
   t.plan(1)
-  nuke({ name: appname, force: true }, function nuked (err) {
+  destroy({ name: appname, force: true }, function destroyed (err) {
     if (err) t.fail(err)
     else t.ok(true)
   })
 })
 
-test('verify said app is actually nuked', t => {
+test('verify said app is actually destroyed', t => {
   t.plan(1)
   let cloudformation = new aws.CloudFormation
   cloudformation.describeStacks({
     StackName: appname
   },
   function (err) {
-    let msg = 'Stack with id NukeTestingStaging does not exist'
+    let msg = 'Stack with id destroyTestingStaging does not exist'
     if (err && err.code == 'ValidationError' && err.message == msg) {
       t.ok(true)
     }
