@@ -1,7 +1,7 @@
 {
   "name": "@architect/destroy",
-  "version": "1.0.0",
-  "description": "Delete a CloudFormation stack generated with Architect",
+  "version": "0.0.1",
+  "description": "Destroy projects created with Architect",
   "main": "src/index.js",
   "bin": {
     "arc-destroy": "src/cli.js"
