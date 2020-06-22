@@ -4,20 +4,15 @@
 
 > Architect serverless framework module for destroying projects created with Architect
 
-Architect Destroy destroys Architect-generated projects; each Architect project generates a CloudFormation stack, which is the primary resource deleted by Destroy.
-
-A CloudFormation stack is a collection of AWS resources that you can manage as a single unit; this includes the resources required to . If you no longer require that web application, you can simply delete the stack, and all of its related resources are deleted.
+Architect Destroy destroys Architect-generated projects. More specifically, it destroys your projects' CloudFormation stacks, and if called with `--force` (or the `force` param via API), destroys your DynamoDB (`@tables`) databases and S3 buckets and assets (`@static`).
 
 
 # API
 
-## `destroy.dirty(callback)`
+## `destroy({ name, force }, callback)`
 
-Destroys Function code to the staging environment _by ommitting CloudFormation and messing with Lambda infrastructure directly_. There's a reason we called this `dirty`. Hey, it works, and it's much faster.
+Destroys all infrastructure associated to your Architect app.
 
+`name`, the CloudFormation stack name of the app in question, must be passed.
 
-## `destroy.sam({verbose, production}, callback)`
-
-Destroys all infrastructure associated to your @architect app.
-
-Set `verbose` to truthy to enable chatty mode. By default will only push to the staging environment unless `production` is truthy.
+`force` proceeds to destroy your app if it contains DynamoDB tables and / or S3 buckets.
