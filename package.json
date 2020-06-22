@@ -13,6 +13,9 @@
     "test:integration": "tape test/*-test.js | tap-spec"
   },
   "license": "Apache-2.0",
+  "engines": {
+    "node": ">=10"
+  },
   "dependencies": {
     "@architect/eslint-config": "0.0.1",
     "@architect/parser": "~2.1.5",
