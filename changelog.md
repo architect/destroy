@@ -2,11 +2,12 @@
 
 ---
 
-## [1.0.0] 2020-06-22
+## [1.0.1] 2020-06-22
 
 ### Added
 
 - Say hello to `@architect/destroy`!
+- Fixed src/cli to export a function
 
 ---
 

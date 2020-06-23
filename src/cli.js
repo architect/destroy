@@ -2,22 +2,32 @@
 let { read } = require('@architect/parser')
 let { banner, toLogicalID, updater } = require('@architect/utils')
 let { version } = require('../package.json')
-let { arc } = read()
-let destroy = require('./index')
+
+let destroy = require('./index.js')
 let update = updater('Destroy')
 
-// Args
-let args = process.argv
+if (require.main === module) {
+  (async function () {
+    try {
+      await main(process.argv)
+    }
+    catch (err) {
+      console.log(err)
+    }
+  })()
+}
 
-let findName = p => p === '--name'
-let named = args.includes('--name') && (args[args.findIndex(findName) + 1] === arc.app[0])
+// TODO move CLI logic into CLI and turn other libs into stand alone pure modules
+async function main () {
 
-let forces = p => [ '-f', '--force', 'force' ].includes(p)
-let force = args.some(forces)
+  let { arc } = read()
+  let args = process.argv
+  let findName = p => p === '--name'
+  let named = args.includes('--name') && (args[args.findIndex(findName) + 1] === arc.app[0])
+  let forces = p => [ '-f', '--force', 'force' ].includes(p)
+  let force = args.some(forces)
+  let production = args.includes('--production')
 
-let production = args.includes('--production')
-
-;(async function main () {
   try {
     banner({ version: `Destroy ${version}` })
     if (!named) {
@@ -49,4 +59,6 @@ let production = args.includes('--production')
       update.error(err)
     }
   }
-})()
+}
+
+module.exports = main
