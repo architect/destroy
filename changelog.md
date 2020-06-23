@@ -2,12 +2,13 @@
 
 ---
 
-## [1.0.1] 2020-06-22
+## [1.0.2] 2020-06-22
 
 ### Added
 
 - Say hello to `@architect/destroy`!
 - Fixed src/cli to export a function
+- Fixed src/cli to only show banner if being run standalone
 
 ---
 

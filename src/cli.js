@@ -18,10 +18,10 @@ if (require.main === module) {
 }
 
 // TODO move CLI logic into CLI and turn other libs into stand alone pure modules
-async function main () {
+async function main (args) {
 
   let { arc } = read()
-  let args = process.argv
+
   let findName = p => p === '--name'
   let named = args.includes('--name') && (args[args.findIndex(findName) + 1] === arc.app[0])
   let forces = p => [ '-f', '--force', 'force' ].includes(p)
@@ -29,7 +29,9 @@ async function main () {
   let production = args.includes('--production')
 
   try {
-    banner({ version: `Destroy ${version}` })
+    if (require.main === module) {
+      banner({ version: `Destroy ${version}` })
+    }
     if (!named) {
       throw Error('no_name')
     }
