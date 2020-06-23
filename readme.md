@@ -1,6 +1,6 @@
 [<img src="https://s3-us-west-2.amazonaws.com/arc.codes/architect-logo-500b@2x.png" width=500>](https://www.npmjs.com/package/@architect/create)
 
-# @architect/destroy
+# [@architect/destroy](https://www.npmjs.com/package/@architect/destroy)
 
 > Architect serverless framework module for destroying projects created with Architect
 
