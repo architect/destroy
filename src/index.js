@@ -37,7 +37,7 @@ module.exports = function destroy (params, callback) {
     function (callback) {
       update.status(`Destroying ${StackName} in 5 seconds...`)
       setTimeout(() => {
-        update.start(`Destroying ${StackName}...`)
+        update.start(`Destroying ${StackName}`)
         callback()
       }, 5000)
     },
@@ -60,7 +60,7 @@ module.exports = function destroy (params, callback) {
     // delete static assets
     function (bucketExists, callback) {
       if (bucketExists && force) {
-        let bucket = bucketExists.OutputValue.replace('http://', '').split('.')[0]
+        let bucket = bucketExists.OutputValue.replace('http://', '').replace('https://', '').split('.')[0]
         deleteBucketContents({
           bucket
         }, callback)
@@ -114,7 +114,7 @@ module.exports = function destroy (params, callback) {
           StackName
         },
         function done (err) {
-          let msg = `Stack ID ${StackName} does not exist`
+          let msg = `CoudFormation stack ID ${StackName} does not exist`
           if (err && err.code == 'ValidationError' && err.message == msg) {
             update.done(`Successfully destroyed ${StackName}`)
             callback() // this is good! it's gone...
