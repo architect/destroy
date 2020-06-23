@@ -4,6 +4,9 @@
 
 > Architect serverless framework module for destroying projects created with Architect
 
+[![GitHub CI status](https://github.com/architect/destroy/workflows/Node%20CI/badge.svg)](https://github.com/architect/destroy/actions?query=workflow%3A%22Node+CI%22)
+
+
 Architect Destroy destroys Architect-generated projects. More specifically, it destroys your projects' CloudFormation stacks, and if called with `--force` (or the `force` param via API), destroys your DynamoDB (`@tables`) databases and S3 buckets and assets (`@static`).
 
 
