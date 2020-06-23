@@ -114,10 +114,10 @@ module.exports = function destroy (params, callback) {
           StackName
         },
         function done (err) {
-          let msg = `CoudFormation stack ID ${StackName} does not exist`
+          let msg = `Stack with id ${StackName} does not exist` // Specific AWS message
           if (err && err.code == 'ValidationError' && err.message == msg) {
             update.done(`Successfully destroyed ${StackName}`)
-            callback() // this is good! it's gone...
+            callback()
           }
           else {
             setTimeout(function delay () {

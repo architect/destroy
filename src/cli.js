@@ -24,19 +24,23 @@ let production = args.includes('--production')
       throw Error('no_name')
     }
     let env = production ? 'production' : 'staging'
+    update.status(`Destroying ${env} environment`)
+    if (env === 'staging') {
+      update.status(`Reminder: if you deployed to production, don't forget to run destroy again with: --production`)
+    }
     let name = toLogicalID(`${arc.app[0]}-${env}`)
     await destroy({ name, force, update })
   }
   catch (err) {
     let { message } = err
     if (message === 'no_name') {
-      update.error(`If you're really sure you want to destroy this app, run this command with: --name ${arc.app[0]}`)
+      update.warn(`If you're really sure you want to destroy this app, run destroy with: --name ${arc.app[0]}`)
     }
     else if (message === 'bucket_exists') {
-      update.error('Static bucket exists. Use --force to delete.')
+      update.warn('Found static bucket! To continue, run destroy with: --force')
     }
     else if (message === 'table_exists') {
-      update.error('Table(s) exist. Use --force to delete.')
+      update.warn('Found table(s)! To continue, run destroy with: --force')
     }
     else {
       update.error(err)
