@@ -33,14 +33,17 @@ let production = args.includes('--production')
   }
   catch (err) {
     let { message } = err
+    let msg = 'To destroy this app (and any static assets and database tables that belong to it), run destroy with: --force'
     if (message === 'no_name') {
       update.warn(`If you're really sure you want to destroy this app, run destroy with: --name ${arc.app[0]}`)
     }
     else if (message === 'bucket_exists') {
-      update.warn('Found static bucket! To continue, run destroy with: --force')
+      update.warn(`Found static bucket!`)
+      update.warn(msg)
     }
     else if (message === 'table_exists') {
-      update.warn('Found table(s)! To continue, run destroy with: --force')
+      update.warn('Found DynamoDB table(s)!')
+      update.warn(msg)
     }
     else {
       update.error(err)
