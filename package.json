@@ -9,7 +9,7 @@
   "scripts": {
     "lint": "eslint . --fix",
     "test": "npm run lint && npm run test:unit",
-    "test:unit": "cross-env # TODO add some unit tests, please!",
+    "test:unit": "cross-env echo TODO add some unit tests, please!",
     "test:integration": "cross-env tape test/integration/**/*-test.js | tap-spec"
   },
   "license": "Apache-2.0",
