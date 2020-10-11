@@ -17,15 +17,15 @@
     "node": ">=10"
   },
   "dependencies": {
-    "@architect/parser": "~2.1.5",
+    "@architect/parser": "~2.3.0",
     "aws-sdk": "~2.644.0",
     "run-waterfall": "~1.1.6"
   },
   "devDependencies": {
-    "@architect/deploy": "^1.8.0",
-    "@architect/eslint-config": "0.0.1",
+    "@architect/deploy": "^2.0.1",
+    "@architect/eslint-config": "1.0.0",
     "cross-env": "~7.0.2",
-    "eslint": "~7.3.0",
+    "eslint": "~7.11.0",
     "tap-spec": "^5.0.0",
     "tape": "^5.0.1"
   },
