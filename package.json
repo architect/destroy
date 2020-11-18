@@ -16,6 +16,10 @@
   "engines": {
     "node": ">=10"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/architect/destroy.git"
+  },
   "dependencies": {
     "@architect/parser": "~2.3.0",
     "aws-sdk": "~2.644.0",
