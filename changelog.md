@@ -2,6 +2,15 @@
 
 ---
 
+## [1.0.3] 2020-11-22
+
+### Changed
+
+- Implemented Inventory (`@architect/inventory`)
+- Updated dependencies
+
+---
+
 ## [1.0.2] 2020-06-22
 
 ### Added
