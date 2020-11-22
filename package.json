@@ -21,8 +21,9 @@
     "url": "https://github.com/architect/destroy.git"
   },
   "dependencies": {
-    "@architect/parser": "~2.3.0",
-    "aws-sdk": "~2.644.0",
+    "@architect/inventory": "~1.1.0-RC.14",
+    "@architect/utils": "~2.0.0-RC.1",
+    "aws-sdk": "2.712.0",
     "run-waterfall": "~1.1.6"
   },
   "devDependencies": {
