@@ -22,16 +22,16 @@
     "url": "https://github.com/architect/destroy.git"
   },
   "dependencies": {
-    "@architect/inventory": "~1.1.0-RC.14",
-    "@architect/utils": "~2.0.0-RC.1",
+    "@architect/inventory": "~1.2.0",
+    "@architect/utils": "~2.0.2",
     "aws-sdk": "~2.712.0",
-    "run-waterfall": "~1.1.6"
+    "run-waterfall": "~1.1.7"
   },
   "devDependencies": {
-    "@architect/deploy": "^2.0.1",
+    "@architect/deploy": "^2.2.1",
     "@architect/eslint-config": "1.0.0",
-    "cross-env": "~7.0.2",
-    "eslint": "~7.11.0",
+    "cross-env": "~7.0.3",
+    "eslint": "~7.14.0",
     "tap-spec": "^5.0.0",
     "tape": "^5.0.1"
   },
