@@ -39,7 +39,7 @@ module.exports = function destroy (params, callback) {
       setTimeout(() => {
         update.start(`Destroying ${StackName}`)
         callback()
-      }, 5000)
+      }, process.env.FUSE ? parseInt(process.env.FUSE) : 5000) // provide an override (mostly for testing)
     },
 
     // check for the stack
