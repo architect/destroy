@@ -51,3 +51,28 @@ test('delete-bucket-contents should callback with nothing if S3.deleteObjects do
     aws.restore()
   })
 })
+
+test('delete-bucket-contents should work even with buckets with more than 1000 items', t => {
+  t.plan(2)
+  let Contents = []
+  for (let i = 0; i < 1337; i++) {
+    Contents.push({ Key: '' + i })
+  }
+  aws.mock('S3', 'listObjectsV2', (params, cb) => {
+    cb(null, {
+      Contents: Contents.splice(0, 1000),
+      IsTruncated: Contents.length > 0,
+      NextContinuationToken: Contents.length > 0 ? 'show me the money!' : null
+    })
+  })
+  let deleteCounter = 0
+  aws.mock('S3', 'deleteObjects', (params, cb) => {
+    deleteCounter++
+    cb()
+  })
+  rm({ bucket: 'bucketlist' }, (err) => {
+    t.notOk(err, 'no error surfaced')
+    t.equals(deleteCounter, 2, 'S3.deleteObjects called twice')
+    aws.restore()
+  })
+})
