@@ -2,6 +2,14 @@
 
 ---
 
+## [1.0.5] 2021-02-26
+
+### Changed
+
+- Emptying out S3 bucket contents now supports buckets that contain more than 1,000 objects.
+
+---
+
 ## [1.0.4] 2020-12-04
 
 ### Changed
