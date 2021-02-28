@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 let _inventory = require('@architect/inventory')
-let { banner, toLogicalID, updater } = require('@architect/utils')
+let { banner, updater } = require('@architect/utils')
 let { version } = require('../package.json')
 
 let destroy = require('./index.js')
@@ -41,8 +41,7 @@ async function main (args) {
     if (env === 'staging') {
       update.status(`Reminder: if you deployed to production, don't forget to run destroy again with: --production`)
     }
-    let name = toLogicalID(`${appname}-${env}`)
-    await destroy({ name, force, update })
+    await destroy({ appname, env, force, update })
   }
   catch (err) {
     let { message } = err

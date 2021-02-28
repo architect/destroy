@@ -7,15 +7,15 @@
 [![GitHub CI status](https://github.com/architect/destroy/workflows/Node%20CI/badge.svg)](https://github.com/architect/destroy/actions?query=workflow%3A%22Node+CI%22)
 
 
-Architect Destroy destroys Architect-generated projects. More specifically, it destroys your projects' CloudFormation stacks, and if called with `--force` (or the `force` param via API), destroys your DynamoDB (`@tables`) databases and S3 buckets and assets (`@static`).
+Architect Destroy destroys Architect-generated projects. More specifically, it destroys your projects' CloudFormation Stacks, CloudWatch Log Groups, S3 bucket used during deployment, SSM Parameters added by [`arc env`](https://github.com/architect/env), and if called with `--force` (or the `force` param via API), destroys your DynamoDB (`@tables`) databases and S3 bucket housing your static assets (`@static`).
 
 
 ## API
 
-### `destroy({ name, force }, callback)`
+### `destroy({ appname, env, force }, callback)`
 
 Destroys all infrastructure associated to your Architect app.
 
-`name`, the CloudFormation stack name of the app in question, must be passed.
-
-`force` proceeds to destroy your app if it contains DynamoDB tables and / or S3 buckets.
+- `appname`: the name of the Architect app in question as defined in your `app.arc` file.
+- `env`: the stage or environment name to destroy. Typical values are `staging` or `production`.
+- `force` proceeds to destroy your app even if it contains DynamoDB tables and / or an S3 bucket containing `@static` assets.

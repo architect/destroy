@@ -2,6 +2,14 @@
 
 ---
 
+## [1.1.0] 2021-02-28
+
+### Added
+
+- `destroy` now wipes out any CloudWatch logs, SSM Parameters added by `arc env` (for the specific environment being destroyed) and wipes and deletes the deployment bucket used during CloudFormation deploys.
+
+---
+
 ## [1.0.5] 2021-02-26
 
 ### Changed
