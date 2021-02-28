@@ -9,8 +9,8 @@
   "scripts": {
     "lint": "eslint . --fix",
     "test": "npm run lint && npm run coverage",
-    "test:unit": "cross-env tape 'test/unit/**/*-test.js' | tap-spec",
-    "coverage": "cross-env FUSE=0 nyc --reporter=lcov --reporter=text npm run test:unit",
+    "test:unit": "cross-env FUSE=0 tape 'test/unit/**/*-test.js' | tap-spec",
+    "coverage": "cross-env nyc --reporter=lcov --reporter=text npm run test:unit",
     "test:integration": "cross-env tape test/integration/**/*-test.js | tap-spec",
     "rc": "npm version prerelease --preid RC"
   },
@@ -26,6 +26,7 @@
     "@architect/inventory": "~1.2.0",
     "@architect/utils": "~2.0.2",
     "aws-sdk": "~2.712.0",
+    "run-parallel": "~1.2.0",
     "run-waterfall": "~1.1.7"
   },
   "devDependencies": {
