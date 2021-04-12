@@ -7,6 +7,15 @@ module.exports = function deleteBucketContents ({ bucket }, callback) {
   let s3 = new aws.S3({ region })
 
   let objects = []
+  let bucketExists = false
+  function ensureBucket (callback) {
+    s3.headBucket({ Bucket: bucket }, function done (err) {
+      if (err) bucketExists = false
+      else bucketExists = true
+      callback(null)
+    })
+  }
+
   function collectObjects (ContinuationToken, callback) {
     s3.listObjectsV2({
       Bucket: bucket,
@@ -45,17 +54,32 @@ module.exports = function deleteBucketContents ({ bucket }, callback) {
   }
 
   waterfall([
-    function (callback) {
-      collectObjects(null, callback)
+    function checkBucketExists (callback) {
+      ensureBucket(callback)
     },
 
-    function (stuffToDelete, callback) {
-      if (Array.isArray(stuffToDelete) && stuffToDelete.length > 0) {
+    function maybeCollectObjectsInBucket (callback) {
+      if (bucketExists) collectObjects(null, callback)
+      else callback(null, [])
+    },
+
+    function maybeDeleteBucketObjects (stuffToDelete, callback) {
+      if (bucketExists && Array.isArray(stuffToDelete) && stuffToDelete.length > 0) {
         deleteObjects(stuffToDelete, callback)
       }
       else {
         callback()
       }
+    },
+
+    function maybeDeleteBucket (callback) {
+      if (bucketExists) {
+        s3.deleteBucket({ Bucket: bucket }, function (err) {
+          if (err) callback(err)
+          else callback()
+        })
+      }
+      else callback()
     }
   ], callback)
 }

@@ -2,6 +2,14 @@
 
 ---
 
+## [1.1.1] 2021-04-12
+
+### Fixed
+
+- Made S3 bucket removal idempotent: if buckets do not exist when attempting to clear/remove them, don't throw an exception.
+
+---
+
 ## [1.1.0] 2021-02-28
 
 ### Added
