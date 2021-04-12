@@ -1,6 +1,6 @@
 let aws = require('aws-sdk')
 let waterfall = require('run-waterfall')
-let deleteBucketContents = require('./_delete-bucket-contents')
+let deleteBucket = require('./_delete-bucket')
 let ssm = require('./_ssm')
 let deleteLogs = require('./_delete-logs')
 let { updater, toLogicalID  } = require('@architect/utils')
@@ -69,8 +69,8 @@ module.exports = function destroy (params, callback) {
     function (bucketExists, callback) {
       if (bucketExists && force) {
         let bucket = bucketExists.OutputValue.replace('http://', '').replace('https://', '').split('.')[0]
-        update.status('Clearing out static S3 bucket...')
-        deleteBucketContents({
+        update.status('Deleting static S3 bucket...')
+        deleteBucket({
           bucket
         }, callback)
       }
@@ -92,18 +92,8 @@ module.exports = function destroy (params, callback) {
     // wipe the deployment bucket and delete it
     function (deploymentBucket, callback) {
       if (deploymentBucket) {
-        update.status('Clearing out deployment S3 bucket...')
-        deleteBucketContents({ bucket: deploymentBucket }, function (err) {
-          if (err) callback(err)
-          else {
-            let s3 = new aws.S3()
-            update.status('Deleting deployment S3 bucket...')
-            s3.deleteBucket({ Bucket: deploymentBucket }, function (err) {
-              if (err) callback(err)
-              else callback()
-            })
-          }
-        })
+        update.status('Deleting deployment S3 bucket...')
+        deleteBucket({ bucket: deploymentBucket }, callback)
       }
       else callback()
     },

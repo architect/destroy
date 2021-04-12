@@ -43,47 +43,61 @@ test('destroy should error if static bucket exists and force is not provided', t
   })
 })
 
-test('destroy should delete static bucket contents if static bucket exists and force is provided', t => {
-  t.plan(1)
+test('destroy should delete static bucket contents and the bucket itself if static bucket exists and force is provided', t => {
+  t.plan(2)
   mocks.staticBucket('somebucketurl')
   mocks.deployBucket(false) // no deploy bucket
   mocks.dbTables([]) // no tables
   mocks.ssmParams([]) // no params
   mocks.cloudwatchLogs([]) // no logs
   mocks.deleteStack()
-  let S3flag = false
+  let S3objectDelete = false
+  let S3delete = false
+  aws.mock('S3', 'headBucket', (params, cb) => cb(null))
   aws.mock('S3', 'listObjectsV2', (ps, cb) => {
     cb(null, { Contents: [ { Key: 'stone' }, { Key: 'lime' } ] })
   })
   aws.mock('S3', 'deleteObjects', (params, cb) => {
-    S3flag = true
+    S3objectDelete = true
+    cb()
+  })
+  aws.mock('S3', 'deleteBucket', (params, cb) => {
+    S3delete = params.Bucket
     cb()
   })
   let params = { ... base, force: true }
   destroy(params, () => {
-    t.ok(S3flag, 'S3.deleteObjects called')
+    t.ok(S3objectDelete, 'S3.deleteObjects called')
+    t.equals(S3delete, 'somebucketurl', 'S3.deleteBucket called for static bucket')
     aws.restore()
   })
 })
 
-test('destroy should delete deployment bucket contents if deployment bucket exists', t => {
-  t.plan(1)
+test('destroy should delete deployment bucket contents and bucket itself if deployment bucket exists', t => {
+  t.plan(2)
   mocks.staticBucket(false)
   mocks.deployBucket('myappdeploybucket') // no deploy bucket
   mocks.dbTables([]) // no tables
   mocks.ssmParams([]) // no params
   mocks.cloudwatchLogs([]) // no logs
   mocks.deleteStack()
-  let S3flag = false
+  let S3objectDelete = false
+  let S3delete = false
+  aws.mock('S3', 'headBucket', (params, cb) => cb(null))
   aws.mock('S3', 'listObjectsV2', (ps, cb) => {
     cb(null, { Contents: [ { Key: 'stone' }, { Key: 'lime' } ] })
   })
   aws.mock('S3', 'deleteObjects', (params, cb) => {
-    S3flag = true
+    S3objectDelete = true
+    cb()
+  })
+  aws.mock('S3', 'deleteBucket', (params, cb) => {
+    S3delete = params.Bucket
     cb()
   })
   destroy(base, () => {
-    t.ok(S3flag, 'S3.deleteObjects called')
+    t.ok(S3objectDelete, 'S3.deleteObjects called')
+    t.equals(S3delete, 'myappdeploybucket', 'S3.deleteBucket called for deployment bucket')
     aws.restore()
   })
 })

@@ -31,7 +31,6 @@ module.exports = {
       if (name) cb(null, { Parameter: { Value: name } })
       else cb({ code: 'ParameterNotFound' })
     })
-    aws.mock('S3', 'deleteBucket', (params, cb) => cb(null))
   },
   ssmParams: function fakeSSMParams (params) {
     aws.mock('SSM', 'getParametersByPath', (query, cb) => {
