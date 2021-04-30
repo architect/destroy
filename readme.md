@@ -12,10 +12,11 @@ Architect Destroy destroys Architect-generated projects. More specifically, it d
 
 ## API
 
-### `destroy({ appname, env, force }, callback)`
+### `destroy({ appname, stackname, env, force }, callback)`
 
 Destroys all infrastructure associated to your Architect app.
 
 - `appname`: the name of the Architect app in question as defined in your `app.arc` file.
+- `stackname`: the custom stack name (if specified during deployment, e.g. `arc deploy --name foo`)
 - `env`: the stage or environment name to destroy. Typical values are `staging` or `production`.
 - `force` proceeds to destroy your app even if it contains DynamoDB tables and / or an S3 bucket containing `@static` assets.

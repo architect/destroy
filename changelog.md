@@ -2,6 +2,20 @@
 
 ---
 
+## [1.2.0] 2021-04-30
+
+### Added
+
+- Added support for custom stage names (aka stack names), fixes #1055; thanks @filmaj + @ryanbethel!
+
+
+### Changed
+
+- Specifying the app to destroy, formerly the `--name` CLI flag, should now be used as `--app`
+  - `--app` and `--name` can now be used together
+
+---
+
 ## [1.1.1] 2021-04-12
 
 ### Fixed
