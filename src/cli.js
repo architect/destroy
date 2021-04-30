@@ -24,30 +24,43 @@ async function main (args) {
     let inventory = await _inventory({})
     appname = inventory.inv.app
 
+    if (require.main === module) {
+      banner({ inventory, version: `Destroy ${version}` })
+    }
+
+    let findApp = p => p === '--app'
+    let app = args.includes('--app') && (args[args.findIndex(findApp) + 1] === appname)
+
+    // User should supply --app $appname in the CLI, however if they only supply --name (the old destroy behavior) then interpret that as --app (and warn)
     let findName = p => p === '--name'
-    let named = args.includes('--name') && (args[args.findIndex(findName) + 1] === appname)
+    let stackname
+    if (!app && args.includes('--name')) {
+      app = (args[args.findIndex(findName) + 1] === appname)
+      update.warn(`--name flag has been updated to support custom stack names, you should specify the app to destroy with: --app ${appname}`)
+    }
+    else {
+      stackname = args.includes('--name') && args[args.findIndex(findName) + 1]
+    }
+
     let forces = p => [ '-f', '--force', 'force' ].includes(p)
     let force = args.some(forces)
     let production = args.includes('--production')
 
-    if (require.main === module) {
-      banner({ inventory, version: `Destroy ${version}` })
-    }
-    if (!named) {
-      throw Error('no_name')
+    if (!app) {
+      throw Error('no_app_name')
     }
     let env = production ? 'production' : 'staging'
     update.status(`Destroying ${env} environment`)
     if (env === 'staging') {
       update.status(`Reminder: if you deployed to production, don't forget to run destroy again with: --production`)
     }
-    await destroy({ appname, env, force, update })
+    await destroy({ appname, stackname, env, force, update })
   }
   catch (err) {
     let { message } = err
     let msg = 'To destroy this app (and any static assets and database tables that belong to it), run destroy with: --force'
-    if (message === 'no_name') {
-      update.warn(`If you're really sure you want to destroy this app, run destroy with: --name ${appname}`)
+    if (message === 'no_app_name') {
+      update.warn(`If you're really sure you want to destroy this app, run destroy with: --app ${appname}`)
     }
     else if (message === 'bucket_exists') {
       update.warn(`Found static bucket!`)

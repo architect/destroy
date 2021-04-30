@@ -12,7 +12,7 @@ let { updater, toLogicalID  } = require('@architect/utils')
  * @param {boolean} params.force - deletes app with impunity, regardless of tables or buckets
  */
 module.exports = function destroy (params, callback) {
-  let { appname, env, force = false, update } = params
+  let { appname, stackname, env, force = false, update } = params
   if (!update) update = updater('Destroy')
 
   // always validate input
@@ -23,7 +23,11 @@ module.exports = function destroy (params, callback) {
     throw ReferenceError('Missing params.appname')
   }
 
+  // StackName → AWS, stackname → user-specified
   let StackName = toLogicalID(`${appname}-${env}`)
+  if (stackname) {
+    StackName += toLogicalID(stackname)
+  }
 
   // hack around no native promise in aws-sdk
   let promise
