@@ -12,7 +12,7 @@ let { updater, toLogicalID  } = require('@architect/utils')
  * @param {boolean} params.force - deletes app with impunity, regardless of tables or buckets
  */
 module.exports = function destroy (params, callback) {
-  let { appname, stackname, env, force = false, update } = params
+  let { appname, stackname, env, force = false, now, update } = params
   if (!update) update = updater('Destroy')
 
   // always validate input
@@ -47,15 +47,21 @@ module.exports = function destroy (params, callback) {
   waterfall([
     // Warning
     function (callback) {
-      update.status(`Destroying ${StackName} in 5 seconds...`)
-      setTimeout(() => {
-        update.status(`Destroying ${StackName}`)
+      if (now) {
+        update.status(`Destroying ${StackName} immediately, hope you know what you're doing!`)
         callback()
-      }, process.env.FUSE ? parseInt(process.env.FUSE) : 5000) // provide an override (mostly for testing)
+      }
+      else {
+        update.status(`Destroying ${StackName} in 5 seconds...`)
+        setTimeout(() => {
+          callback()
+        }, 5000)
+      }
     },
 
     // check for the stack
     function (callback) {
+      update.status(`Destroying ${StackName}`)
       cloudformation.describeStacks({
         StackName
       },
