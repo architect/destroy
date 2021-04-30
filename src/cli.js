@@ -46,6 +46,8 @@ async function main (args) {
     let force = args.some(forces)
     let production = args.includes('--production')
 
+    let now = args.includes('--now')
+
     if (!app) {
       throw Error('no_app_name')
     }
@@ -54,7 +56,7 @@ async function main (args) {
     if (env === 'staging') {
       update.status(`Reminder: if you deployed to production, don't forget to run destroy again with: --production`)
     }
-    await destroy({ appname, stackname, env, force, update })
+    await destroy({ appname, stackname, env, force, now, update })
   }
   catch (err) {
     let { message } = err

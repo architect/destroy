@@ -7,6 +7,7 @@
 ### Added
 
 - Added support for custom stage names (aka stack names), fixes #1055; thanks @filmaj + @ryanbethel!
+- Added `--now` CLI flag in case you just like really need to destroy stuff right. now.
 
 
 ### Changed

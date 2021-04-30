@@ -3,9 +3,11 @@ let mocks = require('./mocks')
 let aws = require('aws-sdk-mock')
 let destroy = require('../../src')
 
+let now = true
 let base = {
   appname: 'pentagon-security',
   env: 'staging',
+  now,
   update: {
     start: () => {},
     status: () => {},
@@ -16,10 +18,10 @@ let base = {
 test('destroy should throw if base parameters are not provided', t => {
   t.plan(2)
   t.throws(() => {
-    destroy({ appname: 'poop' })
+    destroy({ appname: 'poop', now })
   }, { message: 'Missing params.env' }, 'missing env error thrown')
   t.throws(() => {
-    destroy({ env: 'staging' })
+    destroy({ env: 'staging', now })
   }, { message: 'Missing params.appname' }, 'missing appname error thrown')
 })
 
