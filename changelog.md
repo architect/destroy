@@ -2,11 +2,16 @@
 
 ---
 
-## [1.2.1] 2021-05-24
+## [1.2.1 - 1.2.2] 2021-05-24
 
 ### Added
 
 - Use of latest architect inventory for plugins support.
+
+
+### Fixed
+
+- Fixed failing destroy operations when app doesn't have any SSM parameters (which is unusual, but possible in certain circumstances)
 
 ---
 

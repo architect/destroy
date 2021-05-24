@@ -53,11 +53,16 @@ module.exports = {
       else {
         // combine all the various parameters by different path names into a single array
         let Names = res.reduce((aggregate, current) => aggregate.concat(current), [])
-        // byebye
-        ssm.deleteParameters({ Names }, function deleteParameters (err, data) {
-          if (err) callback(err)
-          else callback(null, data)
-        })
+        // While unlikely, it's possible for an app to have no SSM params
+        // ... and when that happens, the following call will fail without things to delete
+        if (Names.length) {
+          // byebye
+          ssm.deleteParameters({ Names }, function deleteParameters (err) {
+            if (err) callback(err)
+            else callback()
+          })
+        }
+        else callback()
       }
     })
   }
