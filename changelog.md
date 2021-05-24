@@ -2,6 +2,14 @@
 
 ---
 
+## [1.2.1] 2021-05-24
+
+### Added
+
+- Use of latest architect inventory for plugins support.
+
+---
+
 ## [1.2.0] 2021-04-30
 
 ### Added
