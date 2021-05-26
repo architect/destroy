@@ -5,6 +5,12 @@ let ssm = require('./_ssm')
 let deleteLogs = require('./_delete-logs')
 let { updater, toLogicalID  } = require('@architect/utils')
 
+function stackNotFound (StackName, err) {
+  if (err && err.code == 'ValidationError' && err.message == `Stack with id ${StackName} does not exist`) {
+    return true
+  }
+  return false
+}
 /**
  * @param {object} params - named parameters
  * @param {string} params.env - name of environment/stage to delete
@@ -40,6 +46,7 @@ module.exports = function destroy (params, callback) {
     })
   }
 
+  let stackExists
   // actual code
   let region = process.env.AWS_REGION
   let cloudformation = new aws.CloudFormation({ region })
@@ -66,13 +73,45 @@ module.exports = function destroy (params, callback) {
         StackName
       },
       function (err, data) {
-        if (err) callback(err)
-        else {
-          let bucket = o => o.OutputKey === 'BucketURL'
-          let hasBucket = data.Stacks[0].Outputs.find(bucket)
-          callback(null, hasBucket)
+        if (stackNotFound(StackName, err)) {
+          stackExists = false
+          callback(null, false)
         }
+        else if (err) callback(err)
+        else callback(null, data.Stacks[0])
       })
+    },
+
+    // check for dynamodb tables and if force flag not provided, error out
+    function (stack, callback) {
+      if (stack) {
+        stackExists = true
+        cloudformation.describeStackResources({
+          StackName
+        },
+        function (err, data) {
+          if (err) callback(err)
+          else {
+            let type = t => t.ResourceType
+            let table = i => i === 'AWS::DynamoDB::Table'
+            let hasTables = data.StackResources.map(type).some(table)
+
+            if (hasTables && !force) callback(Error('table_exists'))
+            else callback(null, stack)
+          }
+        })
+      }
+      else callback(null, stack)
+    },
+
+    // check if static bucket exists in stack
+    function (stack, callback) {
+      if (stack) {
+        let bucket = o => o.OutputKey === 'BucketURL'
+        let hasBucket = stack.Outputs.find(bucket)
+        callback(null, hasBucket)
+      }
+      else callback(null, false)
     },
 
     // delete static assets
@@ -120,41 +159,24 @@ module.exports = function destroy (params, callback) {
       deleteLogs({ StackName, update }, callback)
     },
 
-    // check for dynamodb tables
+    // finally, destroy the cloudformation stack
     function (callback) {
-      cloudformation.describeStackResources({
-        StackName
-      },
-      function (err, data) {
-        if (err) callback(err)
-        else {
-          let type = t => t.ResourceType
-          let table = i => i === 'AWS::DynamoDB::Table'
-          let hasTables = data.StackResources.map(type).some(table)
-          callback(null, hasTables)
-        }
-      })
-    },
-
-    function (hasTables, callback) {
-      if (hasTables && !force) {
-        callback(Error('table_exists'))
-      }
-      else {
-        // got this far, delete everything
+      if (stackExists) {
         update.start(`Destroying CloudFormation Stack ${StackName}...`)
         cloudformation.deleteStack({
           StackName,
         },
         function (err) {
           if (err) callback(err)
-          else callback()
+          else callback(null, true)
         })
       }
+      else callback(null, false)
     },
 
-    // poll for progress
-    function (callback) {
+    // poll for destroy progress in case we are in the process of destroying a stack
+    function (destroyInProgress, callback) {
+      if (!destroyInProgress) return callback()
       let tries = 1
       let max = 6
       function checkit () {
@@ -162,8 +184,7 @@ module.exports = function destroy (params, callback) {
           StackName
         },
         function done (err) {
-          let msg = `Stack with id ${StackName} does not exist` // Specific AWS message
-          if (err && err.code == 'ValidationError' && err.message == msg) {
+          if (stackNotFound(StackName, err)) {
             update.done(`Successfully destroyed ${StackName}`)
             callback()
           }

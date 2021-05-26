@@ -1,6 +1,7 @@
 let test = require('tape')
 let mocks = require('./mocks')
 let aws = require('aws-sdk-mock')
+let utils = require('@architect/utils')
 let destroy = require('../../src')
 
 let now = true
@@ -15,6 +16,8 @@ let base = {
   }
 }
 
+let StackName = utils.toLogicalID(`${base.appname}-${base.env}`)
+
 test('destroy should throw if base parameters are not provided', t => {
   t.plan(2)
   t.throws(() => {
@@ -25,7 +28,7 @@ test('destroy should throw if base parameters are not provided', t => {
   }, { message: 'Missing params.appname' }, 'missing appname error thrown')
 })
 
-test('destroy should error if describeStacks errors', t => {
+test('destroy should error if describeStacks errors generically', t => {
   t.plan(1)
   aws.mock('CloudFormation', 'describeStacks', (ps, cb) => {
     cb(true)
@@ -36,9 +39,32 @@ test('destroy should error if describeStacks errors', t => {
   })
 })
 
+test('destroy should handle a non-existent Stack gracefully', t => {
+  t.plan(2)
+  aws.mock('CloudFormation', 'describeStacks', (ps, cb) => {
+    cb({ code: 'ValidationError', message: `Stack with id ${StackName} does not exist` })
+  })
+  let deleteFlag = false
+  aws.mock('CloudFormation', 'deleteStack', (params, cb) => {
+    deleteFlag = true
+    cb(null)
+  })
+  mocks.staticBucket(false) // no static bucket
+  mocks.deployBucket(false) // no deploy bucket
+  mocks.dbTables([]) // no tables
+  mocks.ssmParams([]) // no params
+  mocks.cloudwatchLogs([]) // no logs
+  destroy(base, (err) => {
+    t.notOk(err, 'no error raised')
+    t.notOk(deleteFlag, 'CloudFormation.deleteStack was not called')
+    aws.restore()
+  })
+})
+
 test('destroy should error if static bucket exists and force is not provided', t => {
   t.plan(1)
   mocks.staticBucket('somebucketurl')
+  mocks.dbTables([]) // no tables
   destroy(base, (err) => {
     t.equals(err.message, 'bucket_exists', 'bucket_exists error surfaced')
     aws.restore()
