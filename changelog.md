@@ -2,12 +2,27 @@
 
 ---
 
-## [1.2.1 - 1.2.2] 2021-05-24
+## [1.2.3] 2021-06-04
+
+### Fixed
+
+- Fixed failing destroy operations when CloudFormation Stack was already deleted; this fixes [#1155](https://github.com/architect/architect/issues/1150)
+
+### Changed
+
+- Detection of resources that require use of the `--force` flag is now done sooner, so as to fail faster in the case the flag is needed
+
+---
+
+## [1.2.2] 2021-05-24
 
 ### Added
 
 - Use of latest architect inventory for plugins support.
 
+---
+
+## [1.2.1] 2021-05-24
 
 ### Fixed
 
@@ -19,9 +34,8 @@
 
 ### Added
 
-- Added support for custom stage names (aka stack names), fixes #1055; thanks @filmaj + @ryanbethel!
+- Added support for custom stage names (aka stack names), fixes [#1055](https://github.com/architect/architect/issues/1055); thanks @filmaj + @ryanbethel!
 - Added `--now` CLI flag in case you just like really need to destroy stuff right. now.
-
 
 ### Changed
 
