@@ -75,6 +75,7 @@ async function main (args) {
     else {
       update.error(err)
     }
+    process.exit(1)
   }
 }
 
