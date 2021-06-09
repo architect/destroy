@@ -29,7 +29,7 @@ module.exports = function destroy (params, callback) {
     throw ReferenceError('Missing params.appname')
   }
 
-  // StackName → AWS, stackname → user-specified
+  // StackName → AWS, stackname → user-specified suffix (via --name param)
   let StackName = toLogicalID(`${appname}-${env}`)
   if (stackname) {
     StackName += toLogicalID(stackname)
@@ -183,22 +183,26 @@ module.exports = function destroy (params, callback) {
         cloudformation.describeStacks({
           StackName
         },
-        function done (err) {
+        function done (err, result) {
           if (stackNotFound(StackName, err)) {
             update.done(`Successfully destroyed ${StackName}`)
-            callback()
+            return callback()
           }
-          else {
-            setTimeout(function delay () {
-              if (tries === max) {
-                callback(Error('Destroy failed; hit max retries'))
-              }
-              else {
-                tries += 1
-                checkit()
-              }
-            }, 10000 * tries)
+          if (!err && result.Stacks) {
+            let stack = result.Stacks.find(s => s.StackName === StackName)
+            if (stack && stack.StackStatus === 'DELETE_FAILED') {
+              return callback(Error(`CloudFormation Stack "${StackName}" destroy failed: ${stack.StackStatusReason}`))
+            }
           }
+          setTimeout(function delay () {
+            if (tries === max) {
+              callback(Error('Destroy failed; hit max retries'))
+            }
+            else {
+              tries += 1
+              checkit()
+            }
+          }, 10000 * tries)
         })
       }
       checkit()
