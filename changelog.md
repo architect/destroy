@@ -1,4 +1,13 @@
-# Architect Sandbox changelog
+# Architect Destroy changelog
+
+---
+
+## [1.2.4] 2021-06-09
+
+### Changed
+
+- If the CloudFormation DeleteStack operation detects that the Stack has a status of `DELETE_FAILED`, it will now report this, along with the status reason, and exit with a non-zero code rather than wait for the `destroy` command timeout to run out; this fixes [#1156](https://github.com/architect/architect/issues/1156)
+- `destroy` will now exit with a non-zero code if any errors are raised during its execution
 
 ---
 

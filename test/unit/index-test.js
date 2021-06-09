@@ -155,7 +155,7 @@ test('destroy should error if DynamoDB tables exist and force is not provided', 
   })
 })
 
-test('destroy should invoke deleteStack', t => {
+test('destroy should invoke deleteStack and return once describeStacks return a not found message', t => {
   t.plan(1)
   mocks.staticBucket(false) // no static bucket
   mocks.deployBucket(false) // no deploy bucket
@@ -169,6 +169,28 @@ test('destroy should invoke deleteStack', t => {
   })
   destroy(base, () => {
     t.ok(deleteFlag, 'CloudFormation.deleteStack called')
+    aws.restore()
+  })
+})
+
+test('destroy should invoke deleteStack and error if describeStacks returns a status of DELETE_FAILED', t => {
+  t.plan(2)
+  aws.mock('CloudFormation', 'describeStacks', (ps, cb) => {
+    cb(null, { Stacks: [ {
+      StackName: 'PentagonSecurityStaging',
+      StackStatus: 'DELETE_FAILED',
+      StackStatusReason: 'task failed successfully',
+      Outputs: []
+    } ] })
+  })
+  mocks.deployBucket(false) // no deploy bucket
+  mocks.dbTables([]) // one table
+  mocks.ssmParams([]) // no params
+  mocks.cloudwatchLogs([]) // no logs
+  mocks.deleteStack()
+  destroy(base, (err) => {
+    t.ok(err, 'Error returned')
+    t.match(err.message, /task failed successfully/, 'Delete failed reason provided')
     aws.restore()
   })
 })
