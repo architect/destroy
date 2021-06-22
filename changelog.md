@@ -10,6 +10,18 @@
 
 ---
 
+## [1.3.0] 2021-06-22
+
+### Added
+
+- Added a `--no-timeout` flag, which causes `destroy` to wait until the CloudFormation Stack is deleted before exiting
+
+### Changed
+
+- `destroy` now pings the CloudFormation API to check for Stack deletion every 10 seconds (instead of increasingly backing off starting from 10 seconds to 60 seconds)
+
+---
+
 ## [1.2.4] 2021-06-09
 
 ### Changed

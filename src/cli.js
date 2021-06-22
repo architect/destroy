@@ -45,6 +45,7 @@ async function main (args) {
     let forces = p => [ '-f', '--force', 'force' ].includes(p)
     let force = args.some(forces)
     let production = args.includes('--production')
+    let retries = args.includes('--no-timeout') ? 999 : 15 // how many times do we ping the CloudFormation API to check if the stack is deleted?
 
     let now = args.includes('--now')
 
@@ -56,7 +57,7 @@ async function main (args) {
     if (env === 'staging') {
       update.status(`Reminder: if you deployed to production, don't forget to run destroy again with: --production`)
     }
-    await destroy({ appname, stackname, env, force, now, update })
+    await destroy({ appname, stackname, env, force, now, retries, update })
   }
   catch (err) {
     let { message } = err
