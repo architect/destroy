@@ -18,7 +18,7 @@ function stackNotFound (StackName, err) {
  * @param {boolean} params.force - deletes app with impunity, regardless of tables or buckets
  */
 module.exports = function destroy (params, callback) {
-  let { appname, stackname, env, force = false, now, update } = params
+  let { appname, stackname, env, force = false, now, retries, update } = params
   if (!update) update = updater('Destroy')
 
   // always validate input
@@ -178,7 +178,7 @@ module.exports = function destroy (params, callback) {
     function (destroyInProgress, callback) {
       if (!destroyInProgress) return callback()
       let tries = 1
-      let max = 6
+      let max = retries // typical values are 15 or 999; see cli.js
       function checkit () {
         cloudformation.describeStacks({
           StackName
@@ -196,13 +196,13 @@ module.exports = function destroy (params, callback) {
           }
           setTimeout(function delay () {
             if (tries === max) {
-              callback(Error('Destroy failed; hit max retries'))
+              callback(Error(`CloudFormation Stack destroy still ongoing; aborting as we hit max number of retries (${max})`))
             }
             else {
               tries += 1
               checkit()
             }
-          }, 10000 * tries)
+          }, 10000)
         })
       }
       checkit()
