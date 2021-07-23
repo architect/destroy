@@ -30,17 +30,11 @@ async function main (args) {
 
     let findApp = p => p === '--app'
     let app = args.includes('--app') && (args[args.findIndex(findApp) + 1] === appname)
+    if (!app) throw Error('no_app_name')
 
     // User should supply --app $appname in the CLI, however if they only supply --name (the old destroy behavior) then interpret that as --app (and warn)
     let findName = p => p === '--name'
-    let stackname
-    if (!app && args.includes('--name')) {
-      app = (args[args.findIndex(findName) + 1] === appname)
-      update.warn(`--name flag has been updated to support custom stack names, you should specify the app to destroy with: --app ${appname}`)
-    }
-    else {
-      stackname = args.includes('--name') && args[args.findIndex(findName) + 1]
-    }
+    let stackname = args.includes('--name') && args[args.findIndex(findName) + 1]
 
     let forces = p => [ '-f', '--force', 'force' ].includes(p)
     let force = args.some(forces)
@@ -49,9 +43,6 @@ async function main (args) {
 
     let now = args.includes('--now')
 
-    if (!app) {
-      throw Error('no_app_name')
-    }
     let env = production ? 'production' : 'staging'
     update.status(`Destroying ${env} environment`)
     if (env === 'staging') {
