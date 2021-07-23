@@ -7,6 +7,7 @@
 ### Changed
 
 - Breaking change: removed support for Node.js 10.x (now EOL, and no longer available to created in AWS Lambda)
+- Breaking change: the `--name` flag can no longer be used in place of `--app` to destroy apps; `--app` must now be used to destroy apps, while `--name` may only be used to destroy stacks; fixes #1165
 - Updated dependencies
 
 ---
