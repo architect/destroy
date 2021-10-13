@@ -1,4 +1,6 @@
+let AWS = require('aws-sdk')
 let aws = require('aws-sdk-mock')
+aws.setSDKInstance(AWS)
 
 // utility functions for the various AWS service mocking combinations we need
 module.exports = {

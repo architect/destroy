@@ -1,5 +1,7 @@
 let test = require('tape')
+let AWS = require('aws-sdk')
 let aws = require('aws-sdk-mock')
+aws.setSDKInstance(AWS)
 let rm = require('../../src/_delete-logs')
 
 // helper mocking functions
