@@ -1,6 +1,8 @@
 let test = require('tape')
 let mocks = require('./mocks')
+let AWS = require('aws-sdk')
 let aws = require('aws-sdk-mock')
+aws.setSDKInstance(AWS)
 let utils = require('@architect/utils')
 let destroy = require('../../src')
 

@@ -1,5 +1,7 @@
 let test = require('tape')
+let AWS = require('aws-sdk')
 let aws = require('aws-sdk-mock')
+aws.setSDKInstance(AWS)
 let ssm = require('../../src/_ssm')
 
 test('getDeployBucket should error if SSM.getParameter errors', t => {
