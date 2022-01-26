@@ -2,11 +2,12 @@
 
 ---
 
-## [3.0.0] 2022-01-23
+## [next] 2022-01-23
 
 ### Changed
 
 - Stop publishing to the GitHub Package registry
+- Updated dependencies
 
 ---
 
