@@ -7,13 +7,11 @@ let { version } = require('../package.json')
 let destroy = require('./index.js')
 let update = updater('Destroy')
 
-async function main (params = {}) {
-  let { inventory } = params
+async function main (opts = {}) {
+  let { inventory } = opts
   let appname
   try {
-    if (!inventory) {
-      inventory = await _inventory({})
-    }
+    if (!inventory) inventory = await _inventory({})
     appname = inventory.inv.app
 
     let alias = {
@@ -22,7 +20,7 @@ async function main (params = {}) {
       debug:      [ 'd' ],
       verbose:    [ 'v' ],
     }
-    let boolean = [ 'force', 'now', 'no-timeout', 'production', 'static', 'verbose' ]
+    let boolean = [ 'debug', 'force', 'now', 'no-timeout', 'production', 'static', 'verbose' ]
     let def = { now: false, timeout: true }
     let args = minimist(process.argv.slice(2), { alias, boolean, default: def })
     if (args._[0] === 'destroy') args._.splice(0, 1)
@@ -44,7 +42,7 @@ async function main (params = {}) {
     if (env === 'staging') {
       update.status(`Reminder: if you deployed to production, don't forget to run destroy again with: --production`)
     }
-    await destroy(params)
+    return destroy(params)
   }
   catch (err) {
     let { message } = err
@@ -74,7 +72,7 @@ if (require.main === module) {
     try {
       let inventory = await _inventory({})
       banner({ inventory, version: `Destroy ${version}` })
-      await main()
+      await main({ inventory })
     }
     catch (err) {
       console.log(err)
