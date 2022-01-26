@@ -2,10 +2,11 @@
 
 ---
 
-## [next] 2022-01-23
+## [3.0.0] 2022-01-23
 
 ### Changed
 
+- Breaking change: bare CLI arguments (e.g. `destroy force`) as aliases to flags are no longer used
 - Stop publishing to the GitHub Package registry
 - Updated dependencies
 
