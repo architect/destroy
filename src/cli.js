@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+let minimist = require('minimist')
 let _inventory = require('@architect/inventory')
 let { banner, updater } = require('@architect/utils')
 let { version } = require('../package.json')
@@ -6,49 +7,44 @@ let { version } = require('../package.json')
 let destroy = require('./index.js')
 let update = updater('Destroy')
 
-if (require.main === module) {
-  (async function () {
-    try {
-      await main(process.argv)
-    }
-    catch (err) {
-      console.log(err)
-    }
-  })()
-}
-
-// TODO move CLI logic into CLI and turn other libs into stand alone pure modules
-async function main (args) {
+async function main (params = {}) {
+  let { inventory } = params
   let appname
   try {
-    let inventory = await _inventory({})
+    if (!inventory) {
+      inventory = await _inventory({})
+    }
     appname = inventory.inv.app
 
-    if (require.main === module) {
-      banner({ inventory, version: `Destroy ${version}` })
+    let alias = {
+      force:      [ 'f' ],
+      production: [ 'p' ],
+      debug:      [ 'd' ],
+      verbose:    [ 'v' ],
+    }
+    let boolean = [ 'force', 'now', 'no-timeout', 'production', 'static', 'verbose' ]
+    let def = { now: false, timeout: true }
+    let args = minimist(process.argv.slice(2), { alias, boolean, default: def })
+    if (args._[0] === 'destroy') args._.splice(0, 1)
+
+    if (!args.app || args.app !== appname) throw Error('no_app_name')
+
+    let env = args.production ? 'production' : 'staging'
+    let params = {
+      appname:    args.app,
+      env,
+      force:      args.force,
+      now:        args.now,
+      retries:    args.timeout ? 15 : 999,
+      stackname:  args.name,
+      update
     }
 
-    let findApp = p => p === '--app'
-    let app = args.includes('--app') && (args[args.findIndex(findApp) + 1] === appname)
-    if (!app) throw Error('no_app_name')
-
-    // User should supply --app $appname in the CLI, however if they only supply --name (the old destroy behavior) then interpret that as --app (and warn)
-    let findName = p => p === '--name'
-    let stackname = args.includes('--name') && args[args.findIndex(findName) + 1]
-
-    let forces = p => [ '-f', '--force', 'force' ].includes(p)
-    let force = args.some(forces)
-    let production = args.includes('--production')
-    let retries = args.includes('--no-timeout') ? 999 : 15 // how many times do we ping the CloudFormation API to check if the stack is deleted?
-
-    let now = args.includes('--now')
-
-    let env = production ? 'production' : 'staging'
     update.status(`Destroying ${env} environment`)
     if (env === 'staging') {
       update.status(`Reminder: if you deployed to production, don't forget to run destroy again with: --production`)
     }
-    await destroy({ appname, stackname, env, force, now, retries, update })
+    await destroy(params)
   }
   catch (err) {
     let { message } = err
@@ -72,3 +68,16 @@ async function main (args) {
 }
 
 module.exports = main
+
+if (require.main === module) {
+  (async function () {
+    try {
+      let inventory = await _inventory({})
+      banner({ inventory, version: `Destroy ${version}` })
+      await main()
+    }
+    catch (err) {
+      console.log(err)
+    }
+  })()
+}
