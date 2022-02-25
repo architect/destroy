@@ -42,7 +42,7 @@ async function main (opts = {}) {
     if (env === 'staging') {
       update.status(`Reminder: if you deployed to production, don't forget to run destroy again with: --production`)
     }
-    return destroy(params)
+    await destroy(params)
   }
   catch (err) {
     let { message } = err

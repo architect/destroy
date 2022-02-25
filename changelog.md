@@ -2,6 +2,14 @@
 
 ---
 
+## [3.0.1] 2022-02-24
+
+### Fixed
+
+- Fix error reporting when run from `arc` (and not as standalone)
+
+---
+
 ## [3.0.0] 2022-01-23
 
 ### Changed
