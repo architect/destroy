@@ -48,21 +48,25 @@ module.exports = {
     // destroy all SSM Parameters associated to app; a few formats:
     // /<app-name>/deploy/bucket - deployment bucket
     // /<app-name>/<env>/* - environment variables via `arc env`
-    parallel([ `/${appname}/${env}`, `/${appname}/deploy` ].map(path => collectByPath.bind(null, path, null)), function paramsCollected (err, res) {
+    let paths = [ `/${appname}/${env}`, `/${appname}/deploy` ]
+    parallel(paths.map(path => collectByPath.bind(null, path, null)), function paramsCollected (err, res) {
       if (err) callback(err)
       else {
         // combine all the various parameters by different path names into a single array
         let Names = res.reduce((aggregate, current) => aggregate.concat(current), [])
-        // While unlikely, it's possible for an app to have no SSM params
-        // ... and when that happens, the following call will fail without things to delete
-        if (Names.length) {
-          // byebye
-          ssm.deleteParameters({ Names }, function deleteParameters (err) {
-            if (err) callback(err)
-            else callback()
-          })
+        function deleteThings () {
+          if (Names.length) {
+            // >10 SSM params in a call will fail
+            let chunk = Names.splice(0, 10)
+            ssm.deleteParameters({ Names: chunk }, function deleteParameters (err) {
+              if (err) callback(err)
+              else if (!Names.length) callback()
+              else deleteThings()
+            })
+          }
+          else callback()
         }
-        else callback()
+        deleteThings()
       }
     })
   }

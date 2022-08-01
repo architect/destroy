@@ -8,6 +8,11 @@
 
 - Updated dependencies
 
+
+### Fixed
+
+- Fixed issue where destroying an environment with >9 env vars would fail; fixes #1351, thanks @pgte!
+
 ---
 
 ## [3.0.3] 2022-05-10
