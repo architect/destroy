@@ -149,8 +149,10 @@ module.exports = function destroy (params, callback) {
 
     // destroy all SSM Parameters associated to app
     function (callback) {
-      update.status('Deleting SSM parameters...')
-      ssm.deleteAll(appname, env, callback)
+      if (!stackname) {
+        update.status('Deleting SSM parameters...')
+        ssm.deleteAll(appname, env, callback)
+      }
     },
 
     // destroy all cloudwatch log groups
