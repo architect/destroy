@@ -2,6 +2,14 @@
 
 ---
 
+## [Unreleased] 
+
+### Fixed
+
+- Deleting a named stack no longer deletes SSM params.
+
+---
+
 ## [3.0.4] 2022-07-26
 
 ### Changed
