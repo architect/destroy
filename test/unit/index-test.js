@@ -157,6 +157,55 @@ test('destroy should error if DynamoDB tables exist and force is not provided', 
   })
 })
 
+test('destroy deletes ssm params', t => {
+  t.plan(3)
+  mocks.staticBucket(false) // no static bucket
+  mocks.deployBucket(false) // no deploy bucket
+  mocks.dbTables([]) // one table
+  mocks.cloudwatchLogs([]) // no logs
+  let paramsDeleted = []
+  let deleteFlag = false
+  aws.mock('SSM', 'getParametersByPath', (params, cb) => {
+    cb(undefined, { Parameters: [ { Name: 'thing' } ] })
+  })
+  aws.mock('SSM', 'deleteParameters', (params, cb) => {
+    paramsDeleted = params.Names
+    cb(undefined, {})
+  })
+  aws.mock('CloudFormation', 'deleteStack', (params, cb) => {
+    deleteFlag = true
+    cb(null)
+  })
+  destroy(base, (err) => {
+    t.notOk(err, 'no error surfaced')
+    t.ok(deleteFlag, 'CloudFormation.deleteStack called')
+    t.ok(paramsDeleted.includes('thing'), 'SSM.deleteParameters called')
+    aws.restore()
+  })
+})
+test('destroy with stackname should not delete ssm params', t => {
+  t.plan(2)
+  mocks.staticBucket(false) // no static bucket
+  mocks.deployBucket(false) // no deploy bucket
+  mocks.dbTables([]) // no table
+  mocks.cloudwatchLogs([]) // no logs
+  let paramsDeleted = []
+  let deleteFlag = false
+  aws.mock('SSM', 'deleteParameters', (params, cb) => {
+    paramsDeleted = params.Names
+    cb(undefined, {})
+  })
+  aws.mock('CloudFormation', 'deleteStack', (params, cb) => {
+    deleteFlag = true
+    cb(null)
+  })
+  destroy({ stackname: 'myPR', ...base }, () => {
+    t.ok(deleteFlag, 'CloudFormation.deleteStack called')
+    t.ok(paramsDeleted.length === 0, 'SSM.deleteParameters not called')
+    aws.restore()
+  })
+})
+
 test('destroy should invoke deleteStack and return once describeStacks return a not found message', t => {
   t.plan(1)
   mocks.staticBucket(false) // no static bucket

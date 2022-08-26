@@ -13,12 +13,13 @@ function stackNotFound (StackName, err) {
 }
 /**
  * @param {object} params - named parameters
- * @param {string} params.env - name of environment/stage to delete
  * @param {string} params.appname - name of arc app
- * @param {boolean} params.force - deletes app with impunity, regardless of tables or buckets
+ * @param {string} params.env - name of environment/stage to delete
+ * @param {string} [params.stackname] - name of stack
+ * @param {boolean} [params.force] - deletes app with impunity, regardless of tables or buckets
  */
 module.exports = function destroy (params, callback) {
-  let { appname, stackname, env, force = false, now, retries, update } = params
+  let { appname, env, stackname, force = false, now, retries, update } = params
   if (!update) update = updater('Destroy')
 
   // always validate input
@@ -149,7 +150,10 @@ module.exports = function destroy (params, callback) {
 
     // destroy all SSM Parameters associated to app
     function (callback) {
-      if (!stackname) {
+      if (stackname) {
+        callback()
+      }
+      else {
         update.status('Deleting SSM parameters...')
         ssm.deleteAll(appname, env, callback)
       }
