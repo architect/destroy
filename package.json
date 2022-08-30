@@ -1,6 +1,6 @@
 {
   "name": "@architect/destroy",
-  "version": "3.0.4",
+  "version": "3.0.5",
   "description": "Destroy projects created with Architect",
   "main": "src/index.js",
   "bin": {
