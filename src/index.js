@@ -151,6 +151,7 @@ module.exports = function destroy (params, callback) {
     // destroy all SSM Parameters associated to app
     function (callback) {
       if (stackname) {
+        update.status('Named environment found, skipping SSM parameter deletion')
         callback()
       }
       else {

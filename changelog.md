@@ -2,11 +2,11 @@
 
 ---
 
-## [Unreleased] 
+## [3.0.5]
 
 ### Fixed
 
-- Deleting a named stack no longer deletes SSM params.
+- Deleting a named stack no longer deletes staging environment SSM params
 
 ---
 
