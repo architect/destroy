@@ -1,3 +1,4 @@
+require('aws-sdk/lib/maintenance_mode_message').suppress = true
 let aws = require('aws-sdk')
 let waterfall = require('run-waterfall')
 let deleteBucket = require('./_delete-bucket')
