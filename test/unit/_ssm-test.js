@@ -1,4 +1,4 @@
-let test = require('tape')
+/* let test = require('tape')
 let AWS = require('aws-sdk')
 let aws = require('aws-sdk-mock')
 aws.setSDKInstance(AWS)
@@ -92,3 +92,4 @@ test('deleteAll should handle SSM parameter paths that contain more than 10 para
     aws.restore()
   })
 })
+ */

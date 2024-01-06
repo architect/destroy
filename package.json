@@ -23,22 +23,27 @@
     "url": "https://github.com/architect/destroy.git"
   },
   "dependencies": {
-    "@architect/inventory": "~3.6.0",
+    "@architect/inventory": "~3.6.6-RC.0",
     "@architect/utils": "~3.1.9",
     "aws-sdk": "^2.1363.0",
+    "@aws-lite/client": "~0.13.4",
+    "@aws-lite/cloudformation": "~0.0.1",
+    "@aws-lite/cloudwatch-logs": "~0.0.2",
+    "@aws-lite/s3": "~0.1.8",
+    "@aws-lite/ssm": "~0.2.2",
     "minimist": "~1.2.8",
     "run-parallel": "~1.2.0",
     "run-waterfall": "~1.1.7"
   },
   "devDependencies": {
-    "@architect/deploy": "~4.5.1",
-    "@architect/eslint-config": "^2.1.1",
+    "@architect/deploy": "~4.6.3",
+    "@architect/eslint-config": "^2.1.2",
     "aws-sdk-mock": "~5.8.0",
     "cross-env": "~7.0.3",
-    "eslint": "^8.47.0",
+    "eslint": "~8.56.0",
     "nyc": "~15.1.0",
-    "tap-arc": "~1.0.0",
-    "tape": "~5.6.6"
+    "tap-arc": "~1.2.2",
+    "tape": "~5.7.2"
   },
   "eslintConfig": {
     "extends": "@architect/eslint-config"

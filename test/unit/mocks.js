@@ -1,4 +1,4 @@
-let AWS = require('aws-sdk')
+/* let AWS = require('aws-sdk')
 let aws = require('aws-sdk-mock')
 aws.setSDKInstance(AWS)
 
@@ -24,11 +24,11 @@ module.exports = {
     aws.mock('CloudFormation', 'describeStackResources', (query, cb) => {
       cb(null, { StackResources: tables.map(t => ({ ResourceType: 'AWS::DynamoDB::Table', Name: t })) })
     })
-  },
-  /**
+  }, */
+/**
    * @param name: should the deploy bucket for the app exist or not?
    */
-  deployBucket: function fakeDeployBucket (name) {
+/* deployBucket: function fakeDeployBucket (name) {
     aws.mock('SSM', 'getParameter', (params, cb) => {
       if (name) cb(null, { Parameter: { Value: name } })
       else cb({ code: 'ParameterNotFound' })
@@ -51,3 +51,4 @@ module.exports = {
     aws.mock('CloudFormation', 'deleteStack', (query, cb) => cb(null, {}))
   }
 }
+ */

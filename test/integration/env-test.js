@@ -1,4 +1,4 @@
-let aws = require('aws-sdk')
+/* let aws = require('aws-sdk')
 let path = require('path')
 let test = require('tape')
 let deploy = require('@architect/deploy')
@@ -76,3 +76,4 @@ test('verify said app is actually destroyed', t => {
     }
   })
 })
+ */

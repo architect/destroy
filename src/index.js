@@ -1,7 +1,5 @@
-// eslint-disable-next-line
-try { require('aws-sdk/lib/maintenance_mode_message').suppress = true }
-catch { /* Noop */ }
-let aws = require('aws-sdk')
+let _inventory = require('@architect/inventory')
+let awsLite = require('@aws-lite/client')
 let waterfall = require('run-waterfall')
 let deleteBucket = require('./_delete-bucket')
 let ssm = require('./_ssm')
@@ -9,11 +7,13 @@ let deleteLogs = require('./_delete-logs')
 let { updater, toLogicalID  } = require('@architect/utils')
 
 function stackNotFound (StackName, err) {
-  if (err && err.code == 'ValidationError' && err.message == `Stack with id ${StackName} does not exist`) {
+  if (err && err.code == 'ValidationError' &&
+      err.message.includes(`Stack with id ${StackName} does not exist`)) {
     return true
   }
   return false
 }
+
 /**
  * @param {object} params - named parameters
  * @param {string} params.appname - name of arc app
@@ -22,7 +22,7 @@ function stackNotFound (StackName, err) {
  * @param {boolean} [params.force] - deletes app with impunity, regardless of tables or buckets
  */
 module.exports = function destroy (params, callback) {
-  let { appname, env, stackname, force = false, now, retries, update } = params
+  let { appname, env, force = false, inventory, now, retries, stackname, update } = params
   if (!update) update = updater('Destroy')
 
   // always validate input
@@ -39,7 +39,6 @@ module.exports = function destroy (params, callback) {
     StackName += toLogicalID(stackname)
   }
 
-  // hack around no native promise in aws-sdk
   let promise
   if (!callback) {
     promise = new Promise(function ugh (res, rej) {
@@ -50,10 +49,7 @@ module.exports = function destroy (params, callback) {
     })
   }
 
-  let stackExists
-  // actual code
-  let region = process.env.AWS_REGION
-  let cloudformation = new aws.CloudFormation({ region })
+  let aws, stack
 
   waterfall([
     // Warning
@@ -70,46 +66,64 @@ module.exports = function destroy (params, callback) {
       }
     },
 
-    // check for the stack
+    // Set up inventory to get region
     function (callback) {
-      update.status(`Destroying ${StackName}`)
-      cloudformation.describeStacks({
-        StackName
-      },
-      function (err, data) {
-        if (stackNotFound(StackName, err)) {
-          stackExists = false
-          callback(null, false)
-        }
-        else if (err) callback(err)
-        else callback(null, data.Stacks[0])
-      })
-    },
-
-    // check for dynamodb tables and if force flag not provided, error out
-    function (stack, callback) {
-      if (stack) {
-        stackExists = true
-        cloudformation.describeStackResources({
-          StackName
-        },
-        function (err, data) {
+      if (!inventory) {
+        _inventory({}, (err, result) => {
           if (err) callback(err)
           else {
-            let type = t => t.ResourceType
-            let table = i => i === 'AWS::DynamoDB::Table'
-            let hasTables = data.StackResources.map(type).some(table)
-
-            if (hasTables && !force) callback(Error('table_exists'))
-            else callback(null, stack)
+            inventory = result
+            callback()
           }
         })
       }
-      else callback(null, stack)
+      else callback()
+    },
+
+    // Instantiate client
+    function (callback) {
+      awsLite({ region: inventory.inv.aws.region, debug: true })
+        .then(_aws => {
+          aws = _aws
+          callback()
+        })
+        .catch(err => callback(err))
+    },
+
+    // check for the stack
+    function (callback) {
+      update.status(`Destroying ${StackName}`)
+      aws.CloudFormation.DescribeStacks({ StackName })
+        .then(data => {
+          stack = data.Stacks[0]
+          callback()
+        })
+        .catch(err => {
+          if (stackNotFound(StackName, err)) {
+            callback()
+          }
+          else callback(err)
+        })
+    },
+
+    // check for dynamodb tables and if force flag not provided, error out
+    function (callback) {
+      if (stack) {
+        aws.CloudFormation.DescribeStackResources({ StackName })
+          .then(data => {
+            let type = t => t.ResourceType
+            let table = i => i === 'AWS::DynamoDB::Table'
+            let hasTables = data.StackResources.map(type).some(table)
+            if (hasTables && !force) callback(Error('table_exists'))
+            else callback()
+          })
+          .catch(err => callback(err))
+      }
+      else callback()
     },
 
     // check if static bucket exists in stack
-    function (stack, callback) {
+    function (callback) {
       if (stack) {
         let bucket = o => o.OutputKey === 'BucketURL'
         let hasBucket = stack.Outputs.find(bucket)
@@ -123,9 +137,7 @@ module.exports = function destroy (params, callback) {
       if (bucketExists && force) {
         let bucket = bucketExists.OutputValue.replace('http://', '').replace('https://', '').split('.')[0]
         update.status('Deleting static S3 bucket...')
-        deleteBucket({
-          bucket
-        }, callback)
+        deleteBucket({ aws, bucket }, callback)
       }
       else if (bucketExists && !force) {
         // throw a big error here
@@ -139,14 +151,14 @@ module.exports = function destroy (params, callback) {
     // look up the deployment bucket name from SSM and delete that
     function (callback) {
       update.status('Retrieving deployment bucket...')
-      ssm.getDeployBucket(appname, callback)
+      ssm.getDeployBucket(aws, appname, callback)
     },
 
     // wipe the deployment bucket and delete it
     function (deploymentBucket, callback) {
       if (deploymentBucket) {
         update.status('Deleting deployment S3 bucket...')
-        deleteBucket({ bucket: deploymentBucket }, callback)
+        deleteBucket({ aws, bucket: deploymentBucket }, callback)
       }
       else callback()
     },
@@ -159,27 +171,23 @@ module.exports = function destroy (params, callback) {
       }
       else {
         update.status('Deleting SSM parameters...')
-        ssm.deleteAll(appname, env, callback)
+        ssm.deleteAll(aws, appname, env, callback)
       }
     },
 
     // destroy all cloudwatch log groups
     function (callback) {
       update.status('Deleting CloudWatch log groups...')
-      deleteLogs({ StackName, update }, callback)
+      deleteLogs({ aws, StackName, update }, callback)
     },
 
     // finally, destroy the cloudformation stack
     function (callback) {
-      if (stackExists) {
+      if (stack) {
         update.start(`Destroying CloudFormation Stack ${StackName}...`)
-        cloudformation.deleteStack({
-          StackName,
-        },
-        function (err) {
-          if (err) callback(err)
-          else callback(null, true)
-        })
+        aws.cloudformation.DeleteStack({ StackName })
+          .then(() => callback(null, true))
+          .catch(err => callback(err))
       }
       else callback(null, false)
     },
@@ -189,33 +197,34 @@ module.exports = function destroy (params, callback) {
       if (!destroyInProgress) return callback()
       let tries = 1
       let max = retries // typical values are 15 or 999; see cli.js
-      function checkit () {
-        cloudformation.describeStacks({
-          StackName
-        },
-        function done (err, result) {
-          if (stackNotFound(StackName, err)) {
-            update.done(`Successfully destroyed ${StackName}`)
-            return callback()
-          }
-          if (!err && result.Stacks) {
-            let stack = result.Stacks.find(s => s.StackName === StackName)
-            if (stack && stack.StackStatus === 'DELETE_FAILED') {
-              return callback(Error(`CloudFormation Stack "${StackName}" destroy failed: ${stack.StackStatusReason}`))
+      function check () {
+        aws.cloudformation.DescribeStacks({ StackName })
+          .then(result => {
+            if (result.Stacks) {
+              let stack = result.Stacks.find(s => s.StackName === StackName)
+              if (stack && stack.StackStatus === 'DELETE_FAILED') {
+                return callback(Error(`CloudFormation Stack "${StackName}" destroy failed: ${stack.StackStatusReason}`))
+              }
             }
-          }
-          setTimeout(function delay () {
-            if (tries === max) {
-              callback(Error(`CloudFormation Stack destroy still ongoing; aborting as we hit max number of retries (${max})`))
+            setTimeout(function delay () {
+              if (tries === max) {
+                callback(Error(`CloudFormation Stack destroy still ongoing; aborting as we hit max number of retries (${max})`))
+              }
+              else {
+                tries += 1
+                check()
+              }
+            }, 10000)
+          })
+          .catch(err => {
+            if (stackNotFound(StackName, err)) {
+              update.done(`Successfully destroyed ${StackName}`)
+              callback()
             }
-            else {
-              tries += 1
-              checkit()
-            }
-          }, 10000)
-        })
+            else callback(err)
+          })
       }
-      checkit()
+      check()
     }
 
   ], callback)

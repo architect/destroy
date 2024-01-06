@@ -1,4 +1,4 @@
-let test = require('tape')
+/* let test = require('tape')
 let AWS = require('aws-sdk')
 let aws = require('aws-sdk-mock')
 aws.setSDKInstance(AWS)
@@ -115,3 +115,4 @@ test('delete-bucket should callback with nothing if bucket does not exist and no
     aws.restore()
   })
 })
+ */

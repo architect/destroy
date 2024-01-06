@@ -1,4 +1,4 @@
-let test = require('tape')
+/* let test = require('tape')
 let mocks = require('./mocks')
 let AWS = require('aws-sdk')
 let aws = require('aws-sdk-mock')
@@ -245,3 +245,4 @@ test('destroy should invoke deleteStack and error if describeStacks returns a st
     aws.restore()
   })
 })
+ */

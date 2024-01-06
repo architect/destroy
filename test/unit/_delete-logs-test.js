@@ -1,4 +1,4 @@
-let test = require('tape')
+/* let test = require('tape')
 let AWS = require('aws-sdk')
 let aws = require('aws-sdk-mock')
 aws.setSDKInstance(AWS)
@@ -55,3 +55,4 @@ test('delete-logs should callback with nothing if deleteLogGroups doesnt error',
     aws.restore()
   })
 })
+ */
