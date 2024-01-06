@@ -25,7 +25,6 @@
   "dependencies": {
     "@architect/inventory": "~3.6.6-RC.0",
     "@architect/utils": "~3.1.9",
-    "aws-sdk": "^2.1363.0",
     "@aws-lite/client": "~0.13.4",
     "@aws-lite/cloudformation": "~0.0.1",
     "@aws-lite/cloudwatch-logs": "~0.0.2",
@@ -38,7 +37,6 @@
   "devDependencies": {
     "@architect/deploy": "~4.6.3",
     "@architect/eslint-config": "^2.1.2",
-    "aws-sdk-mock": "~5.8.0",
     "cross-env": "~7.0.3",
     "eslint": "~8.56.0",
     "nyc": "~15.1.0",
