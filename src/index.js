@@ -82,7 +82,10 @@ module.exports = function destroy (params, callback) {
 
     // Instantiate client
     function (callback) {
-      awsLite({ region: inventory.inv.aws.region })
+      awsLite({
+        profile: inventory.inv.aws.profile,
+        region: inventory.inv.aws.region,
+      })
         .then(_aws => {
           aws = _aws
           callback()
