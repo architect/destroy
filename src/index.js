@@ -85,6 +85,12 @@ module.exports = function destroy (params, callback) {
       awsLite({
         profile: inventory.inv.aws.profile,
         region: inventory.inv.aws.region,
+        plugins: [
+          import('@aws-lite/cloudformation'),
+          import('@aws-lite/cloudwatch-logs'),
+          import('@aws-lite/s3'),
+          import('@aws-lite/ssm'),
+        ],
       })
         .then(_aws => {
           aws = _aws
