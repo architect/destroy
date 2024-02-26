@@ -135,7 +135,7 @@ module.exports = function destroy (params, callback) {
     function (callback) {
       if (stack) {
         let bucket = o => o.OutputKey === 'BucketURL'
-        let hasBucket = stack.Outputs.find(bucket)
+        let hasBucket = stack.Outputs?.find(bucket)
         callback(null, hasBucket)
       }
       else callback(null, false)
