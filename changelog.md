@@ -2,6 +2,19 @@
 
 ---
 
+## [4.0.3] 2024-03-25
+
+### Changed
+
+- Updated dependencies
+
+
+### Fixed
+
+- Fixed error destroying an app that did not deploy correctly the first time
+
+---
+
 ## [4.0.0 - 4.0.2] 2024-01-08
 
 ### Changed
