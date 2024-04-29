@@ -9,6 +9,7 @@
   "scripts": {
     "lint": "eslint . --fix",
     "test": "npm run lint && npm run coverage",
+    "test:nolint": "npm run coverage",
     "test:unit": "cross-env tape 'test/unit/**/*-test.js' | tap-arc",
     "coverage": "cross-env nyc --reporter=lcov --reporter=text npm run test:unit",
     "test:integration": "cross-env tape test/integration/**/*-test.js | tap-arc",
