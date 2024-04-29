@@ -7,7 +7,7 @@ module.exports = {
   getDeployBucket: function getDeployBucket (aws, appname, callback) {
     aws.ssm.GetParameter({
       Name: `/${appname}/deploy/bucket`,
-      WithDecryption: true
+      WithDecryption: true,
     })
       .then(data => {
         let value = data?.Parameter?.Value ? data.Parameter.Value : null
@@ -24,7 +24,7 @@ module.exports = {
       aws.ssm.GetParametersByPath({
         Path: rootPath,
         Recursive: true,
-        paginate: true
+        paginate: true,
       })
         .then(data => {
           if (data?.Parameters?.length) {
@@ -63,5 +63,5 @@ module.exports = {
         deleteThings()
       }
     })
-  }
+  },
 }

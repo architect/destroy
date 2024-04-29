@@ -59,6 +59,6 @@ module.exports = function deleteBucketContents ({ aws, bucket: Bucket }, callbac
           .catch(err => callback(err))
       }
       else callback()
-    }
+    },
   ], callback)
 }

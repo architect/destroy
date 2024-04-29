@@ -234,7 +234,7 @@ module.exports = function destroy (params, callback) {
           })
       }
       check()
-    }
+    },
 
   ], callback)
 

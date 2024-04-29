@@ -35,7 +35,7 @@ async function main (opts = {}) {
       now:        args.now,
       retries:    args.timeout ? 15 : 999,
       stackname:  args.name,
-      update
+      update,
     }
 
     update.status(`Destroying ${env} environment`)
