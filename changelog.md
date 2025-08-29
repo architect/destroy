@@ -2,6 +2,14 @@
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- Added support for `credentials` object parameter in programmatic API
+
+---
+
 ## [4.0.5] 2024-04-29
 
 ### Changed
