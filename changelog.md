@@ -7,6 +7,10 @@
 ### Changed
 
 - Added support for `credentials` object parameter in programmatic API
+- Added support for AWS credentials as CLI arguments: `--access-key-id`, `--secret-access-key`, and `--session-token`
+- Added support for `quiet` flag/parameter to suppress status output during destruction
+- Added `--quiet` (`-q`) CLI flag
+- Enhanced AWS client instantiation to accept flattened credential parameters for `@aws-lite/client`
 
 ---
 
