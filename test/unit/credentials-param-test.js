@@ -1,21 +1,42 @@
 let test = require('tape')
-let awsLite = require('@aws-lite/client')
+let proxyquire = require('proxyquire')
 let inventory = require('@architect/inventory')
-let destroy = require('../../')
 
-test('Set up env', async t => {
-  t.plan(1)
-  awsLite.testing.enable()
-  t.ok(awsLite.testing.isEnabled(), 'AWS client testing enabled')
+let awsLiteArgs = []
+let mockAwsLite = (args) => {
+  awsLiteArgs.push(args)
+  return Promise.resolve({
+    cloudformation: { DescribeStacks: ({ StackName }) => Promise.reject({ code: 'ValidationError', message: `Stack with id ${StackName} does not exist` }) },
+    CloudFormation: { DescribeStacks: ({ StackName }) => Promise.reject({ code: 'ValidationError', message: `Stack with id ${StackName} does not exist` }) },
+    ssm: {
+      GetParameter: () => Promise.resolve({
+        Parameter: {
+          Value: 'test-bucket-name',
+        },
+      }),
+      GetParametersByPath: () => Promise.resolve({ Parameters: [] }),
+    },
+    s3: {
+      HeadBucket: () => Promise.reject({ code: 'NotFound' }),
+    },
+    cloudwatchlogs: {
+      DescribeLogGroups: () => Promise.resolve({ logGroups: [] }),
+    },
+  })
+}
+
+let destroy = proxyquire('../../', {
+  '@aws-lite/client': mockAwsLite,
 })
 
 test('destroy credentials accepted', async t => {
-  t.plan(1)
+  t.plan(3)
   let inv = await inventory({
     rawArc: '@app\ntest-app\n@http\nget /',
     deployStage: 'staging',
   })
   try {
+
     await destroy({
       appname: 'test-app',
       env: 'staging',
@@ -26,25 +47,15 @@ test('destroy credentials accepted', async t => {
       },
       inventory: inv,
       now: true, // Skip the 5-second delay for testing
+      dryRun: true,
     })
-    t.pass('Destroy accepts credentials')
+
+    t.ok(awsLiteArgs[0].accessKeyId, 'accessKeyId is present')
+    t.ok(awsLiteArgs[0].secretAccessKey, 'secretAccessKey is present')
+    t.ok(awsLiteArgs[0].sessionToken, 'sessionToken is present')
   }
   catch (err) {
-    // Check if this is the specific credential rejection error
-    if (err.message.includes('You must supply AWS credentials')) {
-      t.fail('Destroy rejects credentials')
-    }
-    else {
-      // Some other error occurred after credentials were accepted
-      // This is expected since we're not actually destroying real resources
-      t.pass('Destroy accepts credentials')
-    }
-  }
-})
 
-test('Teardown', t => {
-  t.plan(1)
-  awsLite.testing.disable()
-  awsLite.testing.reset()
-  t.notOk(awsLite.testing.isEnabled(), 'AWS client testing disabled')
+    t.fail('Destroy failed: ' + err.message)
+  }
 })
