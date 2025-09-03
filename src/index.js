@@ -20,9 +20,10 @@ function stackNotFound (StackName, err) {
  * @param {string} params.env - name of environment/stage to delete
  * @param {string} [params.stackname] - name of stack
  * @param {boolean} [params.force] - deletes app with impunity, regardless of tables or buckets
+ * @param {object} [params.credentials] - AWS credentials object with accessKeyId, secretAccessKey, and optionally sessionToken
  */
 module.exports = function destroy (params, callback) {
-  let { appname, env, force = false, inventory, now, retries, stackname, update } = params
+  let { appname, env, force = false, inventory, now, retries, stackname, update, credentials } = params
   if (!update) update = updater('Destroy')
 
   // always validate input
@@ -82,8 +83,7 @@ module.exports = function destroy (params, callback) {
 
     // Instantiate client
     function (callback) {
-      awsLite({
-        profile: inventory.inv.aws.profile,
+      let params = {
         region: inventory.inv.aws.region,
         plugins: [
           import('@aws-lite/cloudformation'),
@@ -91,7 +91,13 @@ module.exports = function destroy (params, callback) {
           import('@aws-lite/s3'),
           import('@aws-lite/ssm'),
         ],
-      })
+      }
+      if (credentials) {
+        // Spread credentials to flatten accessKeyId, secretAccessKey, sessionToken
+        params = { ...params, ...credentials }
+      }
+      if (inventory.inv?.aws?.profile) params.profile = inventory.inv.aws.profile
+      awsLite(params)
         .then(_aws => {
           aws = _aws
           callback()
