@@ -2,6 +2,15 @@
 
 ---
 
+## [4.2.0] 2024-09-04
+
+### Changed
+
+- Added support for `quiet` flag/parameter to suppress status output during destruction
+- Added `--quiet` (`-q`) CLI flag
+
+---
+
 ## [4.1.0] 2024-09-03
 
 ### Changed

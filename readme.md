@@ -10,7 +10,7 @@ Architect Destroy destroys Architect-generated projects. More specifically, it d
 
 ## API
 
-### `destroy({ appname, stackname, env, force, now, retries, credentials }, callback)`
+### `destroy({ appname, stackname, env, force, now, retries, credentials, quiet }, callback)`
 
 Destroys all infrastructure associated to your Architect app.
 
@@ -24,3 +24,36 @@ Destroys all infrastructure associated to your Architect app.
     removed? This API is pinged every 10 seconds. If `retries` is exhausted,
     `callback` will be invoked with an error.
 - `credentials`: (object) AWS credentials object with `accessKeyId`, `secretAccessKey`, and optionally `sessionToken`
+- `quiet`: (boolean) suppress status output during destruction
+
+## CLI
+
+The CLI also supports additional options:
+
+### Credentials
+- `--access-key-id`: AWS Access Key ID
+- `--secret-access-key`: AWS Secret Access Key  
+- `--session-token`: AWS Session Token (optional, for temporary credentials)
+
+### Other Options
+- `--quiet` (`-q`): Suppress status output during destruction
+- `--force` (`-f`): Force deletion including DynamoDB tables and S3 buckets
+- `--production` (`-p`): Target production environment
+- `--now`: Skip the 5-second delay before destruction
+- `--verbose` (`-v`): Show verbose output
+- `--debug` (`-d`): Show debug output
+
+### Examples
+
+```bash
+# Basic usage with credentials
+arc-destroy --app myapp --force --access-key-id AKIA... --secret-access-key abc123...
+
+# Quiet mode
+arc-destroy --app myapp --quiet
+
+# Multiple flags
+arc-destroy --app myapp --force --production --quiet
+```
+
+**Security Note**: While CLI credential arguments are supported, using environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) or AWS credential files is recommended for better security.

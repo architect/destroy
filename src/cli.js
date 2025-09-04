@@ -5,7 +5,7 @@ let { banner, updater } = require('@architect/utils')
 let { version } = require('../package.json')
 
 let destroy = require('./index.js')
-let update = updater('Destroy')
+let update
 
 async function main (opts = {}) {
   let { inventory } = opts
@@ -19,13 +19,17 @@ async function main (opts = {}) {
       production: [ 'p' ],
       debug:      [ 'd' ],
       verbose:    [ 'v' ],
+      quiet:      [ 'q' ],
     }
-    let boolean = [ 'debug', 'force', 'now', 'no-timeout', 'production', 'static', 'verbose' ]
+    let boolean = [ 'debug', 'force', 'now', 'no-timeout', 'production', 'quiet', 'static', 'verbose' ]
     let def = { now: false, timeout: true }
     let args = minimist(process.argv.slice(2), { alias, boolean, default: def })
     if (args._[0] === 'destroy') args._.splice(0, 1)
 
     if (!args.app || args.app !== appname) throw Error('no_app_name')
+
+    // Create updater with quiet flag if specified
+    update = updater('Destroy', { quiet: args.quiet })
 
     let env = args.production ? 'production' : 'staging'
     let params = {
