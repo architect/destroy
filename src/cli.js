@@ -7,7 +7,7 @@ let { version } = require('../package.json')
 let destroy = require('./index.js')
 let update
 
-async function main(opts = {}) {
+async function main (opts = {}) {
   let { inventory } = opts
   let appname
   try {
@@ -15,13 +15,13 @@ async function main(opts = {}) {
     appname = inventory.inv.app
 
     let alias = {
-      force: ['f'],
-      production: ['p'],
-      debug: ['d'],
-      verbose: ['v'],
-      quiet: ['q'],
+      force:      [ 'f' ],
+      production: [ 'p' ],
+      debug:      [ 'd' ],
+      verbose:    [ 'v' ],
+      quiet:      [ 'q' ],
     }
-    let boolean = ['debug', 'force', 'now', 'no-timeout', 'production', 'quiet', 'static', 'verbose']
+    let boolean = [ 'debug', 'force', 'now', 'no-timeout', 'production', 'quiet', 'static', 'verbose' ]
     let def = { now: false, timeout: true }
     let args = minimist(process.argv.slice(2), { alias, boolean, default: def })
     if (args._[0] === 'destroy') args._.splice(0, 1)
@@ -33,12 +33,12 @@ async function main(opts = {}) {
 
     let env = args.production ? 'production' : 'staging'
     let params = {
-      appname: args.app,
+      appname:    args.app,
       env,
-      force: args.force,
-      now: args.now,
-      retries: args.timeout ? 15 : 999,
-      stackname: args.name,
+      force:      args.force,
+      now:        args.now,
+      retries:    args.timeout ? 15 : 999,
+      stackname:  args.name,
       update,
     }
 

@@ -38,7 +38,6 @@ test('destroy credentials accepted', async t => {
   try {
 
     await destroy({
-      quiet: true,
       appname: 'test-app',
       env: 'staging',
       credentials: {
