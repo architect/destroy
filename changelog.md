@@ -6,8 +6,7 @@
 
 ### Changed
 
-- Added support for `quiet` flag/parameter to suppress status output during destruction
-- Added `--quiet` (`-q`) CLI flag
+- Added support for `quiet` parameter in programmatic API to suppress status output during destruction
 
 ---
 

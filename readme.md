@@ -36,7 +36,6 @@ The CLI also supports additional options:
 - `--session-token`: AWS Session Token (optional, for temporary credentials)
 
 ### Other Options
-- `--quiet` (`-q`): Suppress status output during destruction
 - `--force` (`-f`): Force deletion including DynamoDB tables and S3 buckets
 - `--production` (`-p`): Target production environment
 - `--now`: Skip the 5-second delay before destruction
@@ -49,11 +48,8 @@ The CLI also supports additional options:
 # Basic usage with credentials
 arc-destroy --app myapp --force --access-key-id AKIA... --secret-access-key abc123...
 
-# Quiet mode
-arc-destroy --app myapp --quiet
-
 # Multiple flags
-arc-destroy --app myapp --force --production --quiet
+arc-destroy --app myapp --force --production
 ```
 
 **Security Note**: While CLI credential arguments are supported, using environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) or AWS credential files is recommended for better security.
