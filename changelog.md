@@ -2,6 +2,14 @@
 
 ---
 
+## [4.2.0] 2024-09-04
+
+### Changed
+
+- Added support for `quiet` parameter in programmatic API to suppress status output during destruction
+
+---
+
 ## [4.1.0] 2024-09-03
 
 ### Changed

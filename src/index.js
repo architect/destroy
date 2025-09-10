@@ -4,11 +4,11 @@ let waterfall = require('run-waterfall')
 let deleteBucket = require('./_delete-bucket')
 let ssm = require('./_ssm')
 let deleteLogs = require('./_delete-logs')
-let { updater, toLogicalID  } = require('@architect/utils')
+let { updater, toLogicalID } = require('@architect/utils')
 
 function stackNotFound (StackName, err) {
   if (err && err.code == 'ValidationError' &&
-      err.message.includes(`Stack with id ${StackName} does not exist`)) {
+    err.message.includes(`Stack with id ${StackName} does not exist`)) {
     return true
   }
   return false
@@ -21,10 +21,11 @@ function stackNotFound (StackName, err) {
  * @param {string} [params.stackname] - name of stack
  * @param {boolean} [params.force] - deletes app with impunity, regardless of tables or buckets
  * @param {object} [params.credentials] - AWS credentials object with accessKeyId, secretAccessKey, and optionally sessionToken
+ * @param {boolean} [params.quiet] - suppress output
  */
 module.exports = function destroy (params, callback) {
-  let { appname, env, force = false, inventory, now, retries, stackname, update, credentials } = params
-  if (!update) update = updater('Destroy')
+  let { appname, env, force = false, inventory, now, retries, stackname, update, credentials, quiet } = params
+  if (!update) update = updater('Destroy', { quiet })
 
   // always validate input
   if (!env) {

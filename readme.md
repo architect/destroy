@@ -10,7 +10,7 @@ Architect Destroy destroys Architect-generated projects. More specifically, it d
 
 ## API
 
-### `destroy({ appname, stackname, env, force, now, retries, credentials }, callback)`
+### `destroy({ appname, stackname, env, force, now, retries, credentials, quiet }, callback)`
 
 Destroys all infrastructure associated to your Architect app.
 
@@ -24,3 +24,4 @@ Destroys all infrastructure associated to your Architect app.
     removed? This API is pinged every 10 seconds. If `retries` is exhausted,
     `callback` will be invoked with an error.
 - `credentials`: (object) AWS credentials object with `accessKeyId`, `secretAccessKey`, and optionally `sessionToken`
+- `quiet`: (boolean) suppress status output during destruction
