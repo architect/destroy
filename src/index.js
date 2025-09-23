@@ -1,10 +1,11 @@
+let { updater, toLogicalID, waterfall } = require('@architect/utils')
 let _inventory = require('@architect/inventory')
 let awsLite = require('@aws-lite/client')
-let waterfall = require('run-waterfall')
+
 let deleteBucket = require('./_delete-bucket')
 let ssm = require('./_ssm')
 let deleteLogs = require('./_delete-logs')
-let { updater, toLogicalID } = require('@architect/utils')
+
 
 function stackNotFound (StackName, err) {
   if (err && err.code == 'ValidationError' &&
