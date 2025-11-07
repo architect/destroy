@@ -23,9 +23,10 @@ function stackNotFound (StackName, err) {
  * @param {boolean} [params.force] - deletes app with impunity, regardless of tables or buckets
  * @param {object} [params.credentials] - AWS credentials object with accessKeyId, secretAccessKey, and optionally sessionToken
  * @param {boolean} [params.quiet] - suppress output
+ * @param {string} [params.region] - region override
  */
 module.exports = function destroy (params, callback) {
-  let { appname, env, force = false, inventory, now, retries, stackname, update, credentials, quiet } = params
+  let { appname, env, force = false, inventory, now, retries, stackname, update, credentials, quiet, region } = params
   if (!update) update = updater('Destroy', { quiet })
 
   // always validate input
@@ -86,7 +87,7 @@ module.exports = function destroy (params, callback) {
     // Instantiate client
     function (callback) {
       let params = {
-        region: inventory.inv.aws.region,
+        region: region || inventory.inv.aws.region,
         plugins: [
           import('@aws-lite/cloudformation'),
           import('@aws-lite/cloudwatch-logs'),
