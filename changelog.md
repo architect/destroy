@@ -2,6 +2,31 @@
 
 ---
 
+## [5.0.2] 2025-11-10
+
+### Changed
+
+- Added support for `region` parameter in programmatic API
+
+---
+
+## [5.0.1] 2025-09-25
+
+### Changed
+
+- Lock down dependencies.
+
+---
+
+## [5.0.0] 2025-09-24
+
+### Changed
+
+- Updated supported node.js versions to 20, 22 and 24.
+- Removed dependencies that are vendored into `@architect/utils`.
+
+---
+
 ## [4.2.0] 2024-09-04
 
 ### Changed
