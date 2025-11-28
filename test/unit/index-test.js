@@ -1,10 +1,6 @@
-/* let test = require('tape')
-let mocks = require('./mocks')
-let AWS = require('aws-sdk')
-let aws = require('aws-sdk-mock')
-aws.setSDKInstance(AWS)
-let utils = require('@architect/utils')
-let destroy = require('../../src')
+let { describe, it, beforeEach } = require('node:test')
+let assert = require('node:assert/strict')
+let mockHelpers = require('../helpers/mocks')
 
 let now = true
 let base = {
@@ -14,235 +10,631 @@ let base = {
   update: {
     start: () => {},
     status: () => {},
-    done: () => {}
-  }
+    done: () => {},
+  },
 }
 
-let StackName = utils.toLogicalID(`${base.appname}-${base.env}`)
+// Mock inventory for all tests
+let mockInventory = (opts, cb) => {
+  cb(null, { inv: { aws: { region: 'us-east-1' } } })
+}
 
-test('destroy should throw if base parameters are not provided', t => {
-  t.plan(2)
-  t.throws(() => {
-    destroy({ appname: 'poop', now })
-  }, { message: 'Missing params.env' }, 'missing env error thrown')
-  t.throws(() => {
-    destroy({ env: 'staging', now })
-  }, { message: 'Missing params.appname' }, 'missing appname error thrown')
-})
+describe('destroy main functionality', () => {
+  beforeEach(() => {
+    // Clear the destroy module cache before each test
+    delete require.cache[require.resolve('../../')]
+    delete require.cache[require.resolve('../../src')]
+  })
+  it('should throw if base parameters are not provided', () => {
+    let destroy = require('../../src')
 
-test('destroy should error if describeStacks errors generically', t => {
-  t.plan(1)
-  aws.mock('CloudFormation', 'describeStacks', (ps, cb) => {
-    cb(true)
-  })
-  destroy(base, (err) => {
-    t.ok(err, 'error surfaced')
-    aws.restore()
-  })
-})
+    assert.throws(() => {
+      destroy({ appname: 'poop', now })
+    }, { message: 'Missing params.env' }, 'missing env error thrown')
 
-test('destroy should handle a non-existent Stack gracefully', t => {
-  t.plan(2)
-  aws.mock('CloudFormation', 'describeStacks', (ps, cb) => {
-    cb({ code: 'ValidationError', message: `Stack with id ${StackName} does not exist` })
+    assert.throws(() => {
+      destroy({ env: 'staging', now })
+    }, { message: 'Missing params.appname' }, 'missing appname error thrown')
   })
-  let deleteFlag = false
-  aws.mock('CloudFormation', 'deleteStack', (params, cb) => {
-    deleteFlag = true
-    cb(null)
-  })
-  mocks.staticBucket(false) // no static bucket
-  mocks.deployBucket(false) // no deploy bucket
-  mocks.dbTables([]) // no tables
-  mocks.ssmParams([]) // no params
-  mocks.cloudwatchLogs([]) // no logs
-  destroy(base, (err) => {
-    t.notOk(err, 'no error raised')
-    t.notOk(deleteFlag, 'CloudFormation.deleteStack was not called')
-    aws.restore()
-  })
-})
 
-test('destroy should error if static bucket exists and force is not provided', t => {
-  t.plan(1)
-  mocks.staticBucket('somebucketurl')
-  mocks.dbTables([]) // no tables
-  destroy(base, (err) => {
-    t.equals(err.message, 'bucket_exists', 'bucket_exists error surfaced')
-    aws.restore()
-  })
-})
+  it('should error if describeStacks errors generically', async () => {
+    let mockAws = mockHelpers.createMockAwsClient({
+      CloudFormation: {
+        DescribeStacks: () => Promise.reject(new Error('Generic AWS error')),
+      },
+    })
 
-test('destroy should delete static bucket contents and the bucket itself if static bucket exists and force is provided', t => {
-  t.plan(2)
-  mocks.staticBucket('somebucketurl')
-  mocks.deployBucket(false) // no deploy bucket
-  mocks.dbTables([]) // no tables
-  mocks.ssmParams([]) // no params
-  mocks.cloudwatchLogs([]) // no logs
-  mocks.deleteStack()
-  let S3objectDelete = false
-  let S3delete = false
-  aws.mock('S3', 'headBucket', (params, cb) => cb(null))
-  aws.mock('S3', 'listObjectsV2', (ps, cb) => {
-    cb(null, { Contents: [ { Key: 'stone' }, { Key: 'lime' } ] })
-  })
-  aws.mock('S3', 'deleteObjects', (params, cb) => {
-    S3objectDelete = true
-    cb()
-  })
-  aws.mock('S3', 'deleteBucket', (params, cb) => {
-    S3delete = params.Bucket
-    cb()
-  })
-  let params = { ... base, force: true }
-  destroy(params, () => {
-    t.ok(S3objectDelete, 'S3.deleteObjects called')
-    t.equals(S3delete, 'somebucketurl', 'S3.deleteBucket called for static bucket')
-    aws.restore()
-  })
-})
+    // Mock @aws-lite/client module
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
 
-test('destroy should delete deployment bucket contents and bucket itself if deployment bucket exists', t => {
-  t.plan(2)
-  mocks.staticBucket(false)
-  mocks.deployBucket('myappdeploybucket') // no deploy bucket
-  mocks.dbTables([]) // no tables
-  mocks.ssmParams([]) // no params
-  mocks.cloudwatchLogs([]) // no logs
-  mocks.deleteStack()
-  let S3objectDelete = false
-  let S3delete = false
-  aws.mock('S3', 'headBucket', (params, cb) => cb(null))
-  aws.mock('S3', 'listObjectsV2', (ps, cb) => {
-    cb(null, { Contents: [ { Key: 'stone' }, { Key: 'lime' } ] })
-  })
-  aws.mock('S3', 'deleteObjects', (params, cb) => {
-    S3objectDelete = true
-    cb()
-  })
-  aws.mock('S3', 'deleteBucket', (params, cb) => {
-    S3delete = params.Bucket
-    cb()
-  })
-  destroy(base, () => {
-    t.ok(S3objectDelete, 'S3.deleteObjects called')
-    t.equals(S3delete, 'myappdeploybucket', 'S3.deleteBucket called for deployment bucket')
-    aws.restore()
-  })
-})
-test('destroy should error if describeStackResources errors', t => {
-  t.plan(1)
-  mocks.staticBucket(false) // no static bucket
-  mocks.deployBucket(false) // no deploy bucket
-  mocks.ssmParams([]) // no params
-  mocks.cloudwatchLogs([]) // no logs
-  aws.mock('CloudFormation', 'describeStackResources', (params, cb) => { cb(true) })
-  destroy(base, (err) => {
-    t.ok(err, 'error surfaced')
-    aws.restore()
-  })
-})
+    // Mock @architect/inventory module
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
 
-test('destroy should error if DynamoDB tables exist and force is not provided', t => {
-  t.plan(1)
-  mocks.staticBucket(false) // no static bucket
-  mocks.deployBucket(false) // no deploy bucket
-  mocks.dbTables([ 'cats' ]) // one table
-  mocks.ssmParams([]) // no params
-  mocks.cloudwatchLogs([]) // no logs
-  destroy(base, (err) => {
-    t.equals(err.message, 'table_exists', 'table exists error surfaced')
-    aws.restore()
-  })
-})
+    let destroy = require('../../src')
 
-test('destroy deletes ssm params', t => {
-  t.plan(3)
-  mocks.staticBucket(false) // no static bucket
-  mocks.deployBucket(false) // no deploy bucket
-  mocks.dbTables([]) // one table
-  mocks.cloudwatchLogs([]) // no logs
-  let paramsDeleted = []
-  let deleteFlag = false
-  aws.mock('SSM', 'getParametersByPath', (params, cb) => {
-    cb(undefined, { Parameters: [ { Name: 'thing' } ] })
+    await assert.rejects(
+      async () => {
+        await new Promise((resolve, reject) => {
+          destroy(base, (err) => {
+            if (err) reject(err)
+            else resolve()
+          })
+        })
+      },
+      'error surfaced',
+    )
   })
-  aws.mock('SSM', 'deleteParameters', (params, cb) => {
-    paramsDeleted = params.Names
-    cb(undefined, {})
-  })
-  aws.mock('CloudFormation', 'deleteStack', (params, cb) => {
-    deleteFlag = true
-    cb(null)
-  })
-  destroy(base, (err) => {
-    t.notOk(err, 'no error surfaced')
-    t.ok(deleteFlag, 'CloudFormation.deleteStack called')
-    t.ok(paramsDeleted.includes('thing'), 'SSM.deleteParameters called')
-    aws.restore()
-  })
-})
-test('destroy with stackname should not delete ssm params', t => {
-  t.plan(2)
-  mocks.staticBucket(false) // no static bucket
-  mocks.deployBucket(false) // no deploy bucket
-  mocks.dbTables([]) // no table
-  mocks.cloudwatchLogs([]) // no logs
-  let paramsDeleted = []
-  let deleteFlag = false
-  aws.mock('SSM', 'deleteParameters', (params, cb) => {
-    paramsDeleted = params.Names
-    cb(undefined, {})
-  })
-  aws.mock('CloudFormation', 'deleteStack', (params, cb) => {
-    deleteFlag = true
-    cb(null)
-  })
-  destroy({ stackname: 'myPR', ...base }, () => {
-    t.ok(deleteFlag, 'CloudFormation.deleteStack called')
-    t.ok(paramsDeleted.length === 0, 'SSM.deleteParameters not called')
-    aws.restore()
-  })
-})
 
-test('destroy should invoke deleteStack and return once describeStacks return a not found message', t => {
-  t.plan(1)
-  mocks.staticBucket(false) // no static bucket
-  mocks.deployBucket(false) // no deploy bucket
-  mocks.dbTables([]) // one table
-  mocks.ssmParams([]) // no params
-  mocks.cloudwatchLogs([]) // no logs
-  let deleteFlag = false
-  aws.mock('CloudFormation', 'deleteStack', (params, cb) => {
-    deleteFlag = true
-    cb(null)
-  })
-  destroy(base, () => {
-    t.ok(deleteFlag, 'CloudFormation.deleteStack called')
-    aws.restore()
-  })
-})
+  it('should handle a non-existent Stack gracefully', async () => {
+    let deleteFlag = false
+    let mockAws = mockHelpers.createMockAwsClient({
+      CloudFormation: {
+        DescribeStacks: (params) => {
+          let stackName = params?.StackName || 'UnknownStack'
+          // Stack doesn't exist - reject immediately
+          return Promise.reject({ code: 'ValidationError', message: `Stack with id ${stackName} does not exist` })
+        },
+        DeleteStack: () => {
+          deleteFlag = true
+          return Promise.resolve({})
+        },
+        DescribeStackResources: mockHelpers.dbTables([]),
+      },
+      ssm: {
+        GetParameter: mockHelpers.deployBucket(false),
+        GetParametersByPath: mockHelpers.ssmParams([]),
+      },
+      cloudwatchlogs: {
+        DescribeLogGroups: mockHelpers.cloudwatchLogs([]),
+      },
+    })
 
-test('destroy should invoke deleteStack and error if describeStacks returns a status of DELETE_FAILED', t => {
-  t.plan(2)
-  aws.mock('CloudFormation', 'describeStacks', (ps, cb) => {
-    cb(null, { Stacks: [ {
-      StackName: 'PentagonSecurityStaging',
-      StackStatus: 'DELETE_FAILED',
-      StackStatusReason: 'task failed successfully',
-      Outputs: []
-    } ] })
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
+
+    await new Promise((resolve, reject) => {
+      destroy(base, (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+
+    assert.ok(!deleteFlag, 'CloudFormation.deleteStack was not called')
   })
-  mocks.deployBucket(false) // no deploy bucket
-  mocks.dbTables([]) // one table
-  mocks.ssmParams([]) // no params
-  mocks.cloudwatchLogs([]) // no logs
-  mocks.deleteStack()
-  destroy(base, (err) => {
-    t.ok(err, 'Error returned')
-    t.match(err.message, /task failed successfully/, 'Delete failed reason provided')
-    aws.restore()
+
+  it('should error if static bucket exists and force is not provided', async () => {
+    let mockAws = mockHelpers.createMockAwsClient({
+      CloudFormation: {
+        DescribeStacks: mockHelpers.staticBucket('somebucketurl'),
+        DescribeStackResources: mockHelpers.dbTables([]),
+      },
+    })
+
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
+
+    await assert.rejects(
+      async () => {
+        await new Promise((resolve, reject) => {
+          destroy(base, (err) => {
+            if (err) reject(err)
+            else resolve()
+          })
+        })
+      },
+      { message: 'bucket_exists' },
+      'bucket_exists error surfaced',
+    )
+  })
+
+  it('should delete static bucket contents and the bucket itself if static bucket exists and force is provided', async () => {
+    let S3objectDelete = false
+    let S3delete = false
+    let describeStacksCalls = 0
+
+    let mockAws = mockHelpers.createMockAwsClient({
+      CloudFormation: {
+        DescribeStacks: (params) => {
+          describeStacksCalls++
+          let stackName = params?.StackName || 'UnknownStack'
+          if (describeStacksCalls === 1) {
+            // First call: return stack with static bucket
+            return Promise.resolve({
+              Stacks: [ { Outputs: [ { OutputKey: 'BucketURL', OutputValue: 'somebucketurl' } ] } ],
+            })
+          }
+          else {
+            // Subsequent calls: stack is being deleted
+            return Promise.reject({ code: 'ValidationError', message: `Stack with id ${stackName} does not exist` })
+          }
+        },
+        DeleteStack: mockHelpers.deleteStack(),
+        DescribeStackResources: mockHelpers.dbTables([]),
+      },
+      s3: {
+        HeadBucket: () => Promise.resolve({}),
+        ListObjectsV2: () => Promise.resolve({ Contents: [ { Key: 'stone' }, { Key: 'lime' } ] }),
+        DeleteObjects: () => {
+          S3objectDelete = true
+          return Promise.resolve({})
+        },
+        DeleteBucket: (params) => {
+          S3delete = params.Bucket
+          return Promise.resolve({})
+        },
+      },
+      ssm: {
+        GetParameter: mockHelpers.deployBucket(false),
+        GetParametersByPath: mockHelpers.ssmParams([]),
+      },
+      cloudwatchlogs: {
+        DescribeLogGroups: mockHelpers.cloudwatchLogs([]),
+      },
+    })
+
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
+
+    let params = { ...base, force: true }
+    await new Promise((resolve, reject) => {
+      destroy(params, (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+
+    assert.ok(S3objectDelete, 'S3.deleteObjects called')
+    assert.strictEqual(S3delete, 'somebucketurl', 'S3.deleteBucket called for static bucket')
+  })
+
+  it('should delete deployment bucket contents and bucket itself if deployment bucket exists', async () => {
+    let S3objectDelete = false
+    let S3delete = false
+    let describeStacksCalls = 0
+
+    let mockAws = mockHelpers.createMockAwsClient({
+      CloudFormation: {
+        DescribeStacks: (params) => {
+          describeStacksCalls++
+          let stackName = params?.StackName || 'UnknownStack'
+          if (describeStacksCalls === 1) {
+            // First call: return stack with no static bucket
+            return Promise.resolve({ Stacks: [ { Outputs: [] } ] })
+          }
+          else {
+            // Subsequent calls: stack is being deleted
+            return Promise.reject({ code: 'ValidationError', message: `Stack with id ${stackName} does not exist` })
+          }
+        },
+        DeleteStack: mockHelpers.deleteStack(),
+        DescribeStackResources: mockHelpers.dbTables([]),
+      },
+      s3: {
+        HeadBucket: () => Promise.resolve({}),
+        ListObjectsV2: () => Promise.resolve({ Contents: [ { Key: 'stone' }, { Key: 'lime' } ] }),
+        DeleteObjects: () => {
+          S3objectDelete = true
+          return Promise.resolve({})
+        },
+        DeleteBucket: (params) => {
+          S3delete = params.Bucket
+          return Promise.resolve({})
+        },
+      },
+      ssm: {
+        GetParameter: mockHelpers.deployBucket('myappdeploybucket'),
+        GetParametersByPath: mockHelpers.ssmParams([]),
+      },
+      cloudwatchlogs: {
+        DescribeLogGroups: mockHelpers.cloudwatchLogs([]),
+      },
+    })
+
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
+
+    await new Promise((resolve, reject) => {
+      destroy(base, (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+
+    assert.ok(S3objectDelete, 'S3.deleteObjects called')
+    assert.strictEqual(S3delete, 'myappdeploybucket', 'S3.deleteBucket called for deployment bucket')
+  })
+
+  it('should error if describeStackResources errors', async () => {
+    let mockAws = mockHelpers.createMockAwsClient({
+      CloudFormation: {
+        DescribeStacks: mockHelpers.staticBucket(false),
+        DescribeStackResources: () => Promise.reject(new Error('DescribeStackResources error')),
+      },
+      ssm: {
+        GetParameter: mockHelpers.deployBucket(false),
+        GetParametersByPath: mockHelpers.ssmParams([]),
+      },
+      cloudwatchlogs: {
+        DescribeLogGroups: mockHelpers.cloudwatchLogs([]),
+      },
+    })
+
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
+
+    await assert.rejects(
+      async () => {
+        await new Promise((resolve, reject) => {
+          destroy(base, (err) => {
+            if (err) reject(err)
+            else resolve()
+          })
+        })
+      },
+      'error surfaced',
+    )
+  })
+
+  it('should error if DynamoDB tables exist and force is not provided', async () => {
+    let mockAws = mockHelpers.createMockAwsClient({
+      CloudFormation: {
+        DescribeStacks: mockHelpers.staticBucket(false),
+        DescribeStackResources: mockHelpers.dbTables([ 'cats' ]),
+      },
+      ssm: {
+        GetParameter: mockHelpers.deployBucket(false),
+        GetParametersByPath: mockHelpers.ssmParams([]),
+      },
+      cloudwatchlogs: {
+        DescribeLogGroups: mockHelpers.cloudwatchLogs([]),
+      },
+    })
+
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
+
+    await assert.rejects(
+      async () => {
+        await new Promise((resolve, reject) => {
+          destroy(base, (err) => {
+            if (err) reject(err)
+            else resolve()
+          })
+        })
+      },
+      { message: 'table_exists' },
+      'table exists error surfaced',
+    )
+  })
+
+  it('should delete ssm params', async () => {
+    let paramsDeleted = []
+    let deleteFlag = false
+    let describeStacksCalls = 0
+
+    let mockAws = mockHelpers.createMockAwsClient({
+      CloudFormation: {
+        DescribeStacks: (params) => {
+          describeStacksCalls++
+          let stackName = params?.StackName || 'UnknownStack'
+          if (describeStacksCalls === 1) {
+            // First call: return stack with no outputs
+            return Promise.resolve({ Stacks: [ { Outputs: [] } ] })
+          }
+          else {
+            // Subsequent calls: stack is being deleted
+            return Promise.reject({ code: 'ValidationError', message: `Stack with id ${stackName} does not exist` })
+          }
+        },
+        DeleteStack: () => {
+          deleteFlag = true
+          return Promise.resolve({})
+        },
+        DescribeStackResources: mockHelpers.dbTables([]),
+      },
+      ssm: {
+        GetParameter: mockHelpers.deployBucket(false),
+        GetParametersByPath: () => Promise.resolve({ Parameters: [ { Name: 'thing' } ] }),
+        DeleteParameters: (params) => {
+          paramsDeleted = params.Names
+          return Promise.resolve({})
+        },
+      },
+      cloudwatchlogs: {
+        DescribeLogGroups: mockHelpers.cloudwatchLogs([]),
+      },
+    })
+
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
+
+    await new Promise((resolve, reject) => {
+      destroy(base, (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+
+    assert.ok(deleteFlag, 'CloudFormation.deleteStack called')
+    assert.ok(paramsDeleted.includes('thing'), 'SSM.deleteParameters called')
+  })
+
+  it('should not delete ssm params when stackname is provided', async () => {
+    let paramsDeleted = []
+    let deleteFlag = false
+    let describeStacksCalls = 0
+
+    let mockAws = mockHelpers.createMockAwsClient({
+      CloudFormation: {
+        DescribeStacks: (params) => {
+          describeStacksCalls++
+          let stackName = params?.StackName || 'UnknownStack'
+          if (describeStacksCalls === 1) {
+            // First call: return stack with no outputs
+            return Promise.resolve({ Stacks: [ { Outputs: [] } ] })
+          }
+          else {
+            // Subsequent calls: stack is being deleted
+            return Promise.reject({ code: 'ValidationError', message: `Stack with id ${stackName} does not exist` })
+          }
+        },
+        DeleteStack: () => {
+          deleteFlag = true
+          return Promise.resolve({})
+        },
+        DescribeStackResources: mockHelpers.dbTables([]),
+      },
+      ssm: {
+        DeleteParameters: (params) => {
+          paramsDeleted = params.Names
+          return Promise.resolve({})
+        },
+      },
+      cloudwatchlogs: {
+        DescribeLogGroups: mockHelpers.cloudwatchLogs([]),
+      },
+    })
+
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
+
+    await new Promise((resolve, reject) => {
+      destroy({ stackname: 'myPR', ...base }, (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+
+    assert.ok(deleteFlag, 'CloudFormation.deleteStack called')
+    assert.strictEqual(paramsDeleted.length, 0, 'SSM.deleteParameters not called')
+  })
+
+  it('should invoke deleteStack and return once describeStacks return a not found message', async () => {
+    let deleteFlag = false
+    let describeStacksCalls = 0
+
+    let mockAws = mockHelpers.createMockAwsClient({
+      CloudFormation: {
+        DescribeStacks: (params) => {
+          describeStacksCalls++
+          let stackName = params?.StackName || 'UnknownStack'
+          if (describeStacksCalls === 1) {
+            // First call: return stack with no outputs
+            return Promise.resolve({ Stacks: [ { Outputs: [] } ] })
+          }
+          else {
+            // Subsequent calls: stack is being deleted
+            return Promise.reject({ code: 'ValidationError', message: `Stack with id ${stackName} does not exist` })
+          }
+        },
+        DeleteStack: () => {
+          deleteFlag = true
+          return Promise.resolve({})
+        },
+        DescribeStackResources: mockHelpers.dbTables([]),
+      },
+      ssm: {
+        GetParameter: mockHelpers.deployBucket(false),
+        GetParametersByPath: mockHelpers.ssmParams([]),
+      },
+      cloudwatchlogs: {
+        DescribeLogGroups: mockHelpers.cloudwatchLogs([]),
+      },
+    })
+
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
+
+    await new Promise((resolve, reject) => {
+      destroy(base, (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+
+    assert.ok(deleteFlag, 'CloudFormation.deleteStack called')
+  })
+
+  it('should invoke deleteStack and error if describeStacks returns a status of DELETE_FAILED', async () => {
+    let mockAws = mockHelpers.createMockAwsClient({
+      CloudFormation: {
+        DescribeStacks: () => Promise.resolve({
+          Stacks: [ {
+            StackName: 'PentagonSecurityStaging',
+            StackStatus: 'DELETE_FAILED',
+            StackStatusReason: 'task failed successfully',
+            Outputs: [],
+          } ],
+        }),
+        DeleteStack: mockHelpers.deleteStack(),
+        DescribeStackResources: mockHelpers.dbTables([]),
+      },
+      ssm: {
+        GetParameter: mockHelpers.deployBucket(false),
+        GetParametersByPath: mockHelpers.ssmParams([]),
+      },
+      cloudwatchlogs: {
+        DescribeLogGroups: mockHelpers.cloudwatchLogs([]),
+      },
+    })
+
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
+
+    await assert.rejects(
+      async () => {
+        await new Promise((resolve, reject) => {
+          destroy(base, (err) => {
+            if (err) reject(err)
+            else resolve()
+          })
+        })
+      },
+      (err) => {
+        assert.match(err.message, /task failed successfully/, 'Delete failed reason provided')
+        return true
+      },
+      'Error returned',
+    )
   })
 })
- */

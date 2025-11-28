@@ -4,3 +4,4 @@ coverage
 package-lock.json
 sam.json
 sam.yaml
+.kiro

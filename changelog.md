@@ -2,6 +2,13 @@
 
 ---
 
+### [6.0.0 - 6.0.1] 2025-11-28
+
+- Updated to node >= 22
+- Moved to native node test runner
+
+---
+
 ## [5.0.2] 2025-11-10
 
 ### Changed

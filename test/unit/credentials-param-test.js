@@ -1,41 +1,72 @@
-let test = require('tape')
-let proxyquire = require('proxyquire')
+let { describe, it, beforeEach } = require('node:test')
+let assert = require('node:assert/strict')
 let inventory = require('@architect/inventory')
 
-let awsLiteArgs = []
-let mockAwsLite = (args) => {
-  awsLiteArgs.push(args)
-  return Promise.resolve({
-    cloudformation: { DescribeStacks: ({ StackName }) => Promise.reject({ code: 'ValidationError', message: `Stack with id ${StackName} does not exist` }) },
-    CloudFormation: { DescribeStacks: ({ StackName }) => Promise.reject({ code: 'ValidationError', message: `Stack with id ${StackName} does not exist` }) },
-    ssm: {
-      GetParameter: () => Promise.resolve({
-        Parameter: {
-          Value: 'test-bucket-name',
+describe('destroy credentials', () => {
+  let awsLiteArgs = []
+
+  beforeEach(() => {
+    awsLiteArgs = []
+
+    // Mock @aws-lite/client module
+    let mockAwsLite = (args) => {
+      awsLiteArgs.push(args)
+      return Promise.resolve({
+        cloudformation: {
+          DescribeStacks: ({ StackName }) => Promise.reject({
+            code: 'ValidationError',
+            message: `Stack with id ${StackName} does not exist`,
+          }),
+          DeleteStack: () => Promise.resolve({}),
         },
-      }),
-      GetParametersByPath: () => Promise.resolve({ Parameters: [] }),
-    },
-    s3: {
-      HeadBucket: () => Promise.reject({ code: 'NotFound' }),
-    },
-    cloudwatchlogs: {
-      DescribeLogGroups: () => Promise.resolve({ logGroups: [] }),
-    },
-  })
-}
+        CloudFormation: {
+          DescribeStacks: ({ StackName }) => Promise.reject({
+            code: 'ValidationError',
+            message: `Stack with id ${StackName} does not exist`,
+          }),
+          DeleteStack: () => Promise.resolve({}),
+        },
+        ssm: {
+          GetParameter: () => Promise.resolve({
+            Parameter: {
+              Value: 'test-bucket-name',
+            },
+          }),
+          GetParametersByPath: () => Promise.resolve({ Parameters: [] }),
+          DeleteParameters: () => Promise.resolve({}),
+        },
+        s3: {
+          HeadBucket: () => Promise.reject({ code: 'NotFound' }),
+          ListObjectsV2: () => Promise.resolve({ Contents: [] }),
+          DeleteBucket: () => Promise.resolve({}),
+        },
+        cloudwatchlogs: {
+          DescribeLogGroups: () => Promise.resolve({ logGroups: [] }),
+          DeleteLogGroup: () => Promise.resolve({}),
+        },
+      })
+    }
 
-let destroy = proxyquire('../../', {
-  '@aws-lite/client': mockAwsLite,
-})
+    // Replace the module in cache
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: mockAwsLite,
+    }
 
-test('destroy credentials accepted', async t => {
-  t.plan(3)
-  let inv = await inventory({
-    rawArc: '@app\ntest-app\n@http\nget /',
-    deployStage: 'staging',
+    // Clear the destroy module cache so it picks up the mocked @aws-lite/client
+    delete require.cache[require.resolve('../../')]
   })
-  try {
+
+  it('should accept and pass through credentials to AWS client', async () => {
+    // Import destroy after mocking
+    let destroy = require('../../')
+
+    let inv = await inventory({
+      rawArc: '@app\ntest-app\n@http\nget /',
+      deployStage: 'staging',
+    })
 
     await destroy({
       appname: 'test-app',
@@ -50,12 +81,8 @@ test('destroy credentials accepted', async t => {
       dryRun: true,
     })
 
-    t.ok(awsLiteArgs[0].accessKeyId, 'accessKeyId is present')
-    t.ok(awsLiteArgs[0].secretAccessKey, 'secretAccessKey is present')
-    t.ok(awsLiteArgs[0].sessionToken, 'sessionToken is present')
-  }
-  catch (err) {
-
-    t.fail('Destroy failed: ' + err.message)
-  }
+    assert.ok(awsLiteArgs[0].accessKeyId, 'accessKeyId is present')
+    assert.ok(awsLiteArgs[0].secretAccessKey, 'secretAccessKey is present')
+    assert.ok(awsLiteArgs[0].sessionToken, 'sessionToken is present')
+  })
 })

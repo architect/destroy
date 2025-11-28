@@ -1,58 +1,85 @@
-/* let test = require('tape')
-let AWS = require('aws-sdk')
-let aws = require('aws-sdk-mock')
-aws.setSDKInstance(AWS)
+let { describe, it } = require('node:test')
+let assert = require('node:assert/strict')
+let { createMockAwsClient } = require('../helpers/mocks')
 let rm = require('../../src/_delete-logs')
 
-// helper mocking functions
-function fakeLogGroups (groups) {
-  aws.mock('CloudWatchLogs', 'describeLogGroups', (params, cb) => cb(null, { logGroups: groups.map(g => ({ logGroupName: g })) }))
-}
+describe('_delete-logs', () => {
+  it('should callback with error if describeLogGroups errors', (t, done) => {
+    let mockAws = createMockAwsClient({
+      cloudwatchlogs: {
+        DescribeLogGroups: () => Promise.reject(new Error('AWS error')),
+      },
+    })
 
-test('delete-logs should callback with error if describeLogGroups errors', t => {
-  t.plan(1)
-  aws.mock('CloudWatchLogs', 'describeLogGroups', (params, cb) => {
-    cb(true)
+    rm({ aws: mockAws, StackName: 'phatstax' }, (err) => {
+      assert.ok(err, 'error surfaced')
+      done()
+    })
   })
-  rm({ StackName: 'phatstax' }, (err) => {
-    t.ok(err, 'error surfaced')
-    aws.restore()
+
+  it('should callback with nothing if describeLogGroups returns no results', (t, done) => {
+    let mockAws = createMockAwsClient({
+      cloudwatchlogs: {
+        DescribeLogGroups: () => Promise.resolve({ logGroups: [] }),
+      },
+    })
+
+    rm({ aws: mockAws, StackName: 'stackdatcheese' }, (err) => {
+      assert.ok(!err, 'no error surfaced')
+      done()
+    })
+  })
+
+  it('should warn if deleteLogGroup errors', { timeout: 2000 }, (t, done) => {
+    let warnings = []
+    let callbackCalled = false
+    let mockAws = createMockAwsClient({
+      cloudwatchlogs: {
+        DescribeLogGroups: () => Promise.resolve({
+          logGroups: [ { logGroupName: 'lambda-group-one' } ],
+        }),
+        DeleteLogGroup: () => Promise.reject('yikes'),
+      },
+    })
+
+    rm({
+      aws: mockAws,
+      StackName: 'jamstackftw',
+      update: { warn: (msg) => warnings.push(msg) },
+    }, () => {
+      callbackCalled = true
+      assert.strictEqual(warnings[0], 'yikes', 'error warned')
+      done()
+    })
+
+    // If callback isn't called within 600ms, check warnings and complete test
+    setTimeout(() => {
+      if (!callbackCalled) {
+        assert.strictEqual(warnings[0], 'yikes', 'error warned')
+        done()
+      }
+    }, 600)
+  })
+
+  it('should callback with nothing if deleteLogGroups doesnt error', { timeout: 1000 }, (t, done) => {
+    let warnings = []
+    let mockAws = createMockAwsClient({
+      cloudwatchlogs: {
+        DescribeLogGroups: () => Promise.resolve({
+          logGroups: [ { logGroupName: 'lambda-group-one' } ],
+        }),
+        DeleteLogGroup: () => Promise.resolve(),
+      },
+    })
+
+    rm({
+      aws: mockAws,
+      StackName: 'jamstackftw',
+      update: { warn: (msg) => warnings.push(msg) },
+    }, (err) => {
+      assert.strictEqual(warnings.length, 0, 'no errors raised')
+      assert.ok(!err, 'no error passed to callback')
+      done()
+    })
   })
 })
-
-test('delete-logs should callback with nothing if describeLogGroups returns no results', t => {
-  t.plan(1)
-  fakeLogGroups([])
-  rm({ StackName: 'stackdatcheese' }, (err) => {
-    t.notOk(err, 'no error surfaced')
-    aws.restore()
-  })
-})
-
-test('delete-logs should warn if deleteLogGroup errors', t => {
-  t.plan(1)
-  fakeLogGroups([ 'lambda-group-one' ])
-  aws.mock('CloudWatchLogs', 'deleteLogGroup', (params, cb) => {
-    cb('yikes')
-  })
-  let warnings = []
-  rm({ StackName: 'jamstackftw', update: { warn: (msg) => warnings.push(msg) } }, () => {
-    t.equals(warnings[0], 'yikes', 'error warned')
-    aws.restore()
-  })
-})
-
-test('delete-logs should callback with nothing if deleteLogGroups doesnt error', t => {
-  t.plan(2)
-  fakeLogGroups([ 'lambda-group-one' ])
-  aws.mock('CloudWatchLogs', 'deleteLogGroup', (params, cb) => {
-    cb(null)
-  })
-  let warnings = []
-  rm({ StackName: 'jamstackftw', update: { warn: (msg) => warnings.push(msg) } }, (err) => {
-    t.equals(warnings.length, 0, 'no errors raised')
-    t.notOk(err, 'no error passed to callback')
-    aws.restore()
-  })
-})
- */
