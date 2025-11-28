@@ -1,11 +1,9 @@
 let { describe, it, beforeEach } = require('node:test')
 let assert = require('node:assert/strict')
-let proxyquire = require('proxyquire')
 let inventory = require('@architect/inventory')
 
 describe('region parameter functionality', () => {
   let awsLiteArgs = []
-  let destroy
 
   beforeEach(() => {
     awsLiteArgs = []
@@ -32,12 +30,22 @@ describe('region parameter functionality', () => {
       })
     }
 
-    destroy = proxyquire('../../', {
-      '@aws-lite/client': mockAwsLite,
-    })
+    // Mock @aws-lite/client module
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: mockAwsLite,
+    }
+
+    // Clear the destroy module cache so it picks up the mocked @aws-lite/client
+    delete require.cache[require.resolve('../../')]
   })
 
   it('should accept and use region parameter', async () => {
+    // Import destroy after mocking
+    let destroy = require('../../')
+
     let inv = await inventory({
       rawArc: '@app\ntest-app\n@http\nget /',
       deployStage: 'staging',

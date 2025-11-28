@@ -1,6 +1,5 @@
-let { describe, it } = require('node:test')
+let { describe, it, beforeEach } = require('node:test')
 let assert = require('node:assert/strict')
-let proxyquire = require('proxyquire')
 let mockHelpers = require('../helpers/mocks')
 
 let now = true
@@ -21,6 +20,11 @@ let mockInventory = (opts, cb) => {
 }
 
 describe('destroy main functionality', () => {
+  beforeEach(() => {
+    // Clear the destroy module cache before each test
+    delete require.cache[require.resolve('../../')]
+    delete require.cache[require.resolve('../../src')]
+  })
   it('should throw if base parameters are not provided', () => {
     let destroy = require('../../src')
 
@@ -40,10 +44,23 @@ describe('destroy main functionality', () => {
       },
     })
 
-    let destroy = proxyquire('../../src', {
-      '@aws-lite/client': () => Promise.resolve(mockAws),
-      '@architect/inventory': mockInventory,
-    })
+    // Mock @aws-lite/client module
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    // Mock @architect/inventory module
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
 
     await assert.rejects(
       async () => {
@@ -82,10 +99,21 @@ describe('destroy main functionality', () => {
       },
     })
 
-    let destroy = proxyquire('../../src', {
-      '@aws-lite/client': () => Promise.resolve(mockAws),
-      '@architect/inventory': mockInventory,
-    })
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
 
     await new Promise((resolve, reject) => {
       destroy(base, (err) => {
@@ -105,10 +133,21 @@ describe('destroy main functionality', () => {
       },
     })
 
-    let destroy = proxyquire('../../src', {
-      '@aws-lite/client': () => Promise.resolve(mockAws),
-      '@architect/inventory': mockInventory,
-    })
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
 
     await assert.rejects(
       async () => {
@@ -169,10 +208,21 @@ describe('destroy main functionality', () => {
       },
     })
 
-    let destroy = proxyquire('../../src', {
-      '@aws-lite/client': () => Promise.resolve(mockAws),
-      '@architect/inventory': mockInventory,
-    })
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
 
     let params = { ...base, force: true }
     await new Promise((resolve, reject) => {
@@ -229,10 +279,21 @@ describe('destroy main functionality', () => {
       },
     })
 
-    let destroy = proxyquire('../../src', {
-      '@aws-lite/client': () => Promise.resolve(mockAws),
-      '@architect/inventory': mockInventory,
-    })
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
 
     await new Promise((resolve, reject) => {
       destroy(base, (err) => {
@@ -260,10 +321,21 @@ describe('destroy main functionality', () => {
       },
     })
 
-    let destroy = proxyquire('../../src', {
-      '@aws-lite/client': () => Promise.resolve(mockAws),
-      '@architect/inventory': mockInventory,
-    })
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
 
     await assert.rejects(
       async () => {
@@ -293,10 +365,21 @@ describe('destroy main functionality', () => {
       },
     })
 
-    let destroy = proxyquire('../../src', {
-      '@aws-lite/client': () => Promise.resolve(mockAws),
-      '@architect/inventory': mockInventory,
-    })
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
 
     await assert.rejects(
       async () => {
@@ -350,10 +433,21 @@ describe('destroy main functionality', () => {
       },
     })
 
-    let destroy = proxyquire('../../src', {
-      '@aws-lite/client': () => Promise.resolve(mockAws),
-      '@architect/inventory': mockInventory,
-    })
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
 
     await new Promise((resolve, reject) => {
       destroy(base, (err) => {
@@ -402,10 +496,21 @@ describe('destroy main functionality', () => {
       },
     })
 
-    let destroy = proxyquire('../../src', {
-      '@aws-lite/client': () => Promise.resolve(mockAws),
-      '@architect/inventory': mockInventory,
-    })
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
 
     await new Promise((resolve, reject) => {
       destroy({ stackname: 'myPR', ...base }, (err) => {
@@ -451,10 +556,21 @@ describe('destroy main functionality', () => {
       },
     })
 
-    let destroy = proxyquire('../../src', {
-      '@aws-lite/client': () => Promise.resolve(mockAws),
-      '@architect/inventory': mockInventory,
-    })
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
 
     await new Promise((resolve, reject) => {
       destroy(base, (err) => {
@@ -489,10 +605,21 @@ describe('destroy main functionality', () => {
       },
     })
 
-    let destroy = proxyquire('../../src', {
-      '@aws-lite/client': () => Promise.resolve(mockAws),
-      '@architect/inventory': mockInventory,
-    })
+    require.cache[require.resolve('@aws-lite/client')] = {
+      id: require.resolve('@aws-lite/client'),
+      filename: require.resolve('@aws-lite/client'),
+      loaded: true,
+      exports: () => Promise.resolve(mockAws),
+    }
+
+    require.cache[require.resolve('@architect/inventory')] = {
+      id: require.resolve('@architect/inventory'),
+      filename: require.resolve('@architect/inventory'),
+      loaded: true,
+      exports: mockInventory,
+    }
+
+    let destroy = require('../../src')
 
     await assert.rejects(
       async () => {
