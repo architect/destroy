@@ -8,6 +8,35 @@
 
 Architect Destroy destroys Architect-generated projects. More specifically, it destroys your projects' CloudFormation Stacks, CloudWatch Log Groups, S3 bucket used during deployment, SSM Parameters added by [`arc env`](https://github.com/architect/env), and if called with `--force` (or the `force` param via API), destroys your DynamoDB (`@tables`) databases and S3 bucket housing your static assets (`@static`).
 
+## Testing
+
+This project uses Node.js's native test runner (`node:test`) for all testing. The test suite includes unit tests and integration tests.
+
+### Running Tests
+
+```bash
+# Run linter and unit tests
+npm test
+
+# Run only unit tests
+npm run test:unit
+
+# Run only integration tests
+npm run test:integration
+
+# Run tests with coverage report
+npm run coverage
+```
+
+### Test Structure
+
+Tests are organized in the `test/` directory:
+- `test/unit/` - Unit tests for individual modules
+- `test/integration/` - Integration tests for end-to-end scenarios
+- `test/helpers/` - Shared test utilities and mock helpers
+
+For detailed information about writing tests, mock patterns, and testing best practices, see [TESTING.md](./TESTING.md).
+
 ## API
 
 ### `destroy({ appname, stackname, env, force, now, retries, credentials, quiet, region }, callback)`

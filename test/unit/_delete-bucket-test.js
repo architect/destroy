@@ -1,118 +1,133 @@
-/* let test = require('tape')
-let AWS = require('aws-sdk')
-let aws = require('aws-sdk-mock')
-aws.setSDKInstance(AWS)
+let { describe, it, afterEach } = require('node:test')
+let assert = require('node:assert/strict')
+let { createMockAwsClient } = require('../helpers/mocks')
 let rm = require('../../src/_delete-bucket')
 
-test('delete-bucket should callback with error if S3.listObjects errors', t => {
-  t.plan(1)
-  aws.mock('S3', 'headBucket', (params, cb) => cb(null, {}))
-  aws.mock('S3', 'deleteBucket', (params, cb) => cb(null))
-  aws.mock('S3', 'listObjectsV2', (params, cb) => {
-    cb(true)
-  })
-  rm({ bucket: 'crabsinmahbucket' }, (err) => {
-    t.ok(err, 'error surfaced')
-    aws.restore()
-  })
-})
+describe('delete-bucket', () => {
+  let mockAws
 
-test('delete-bucket should callback with nothing if S3.listObjects returns no results', t => {
-  t.plan(1)
-  aws.mock('S3', 'headBucket', (params, cb) => cb(null, {}))
-  aws.mock('S3', 'deleteBucket', (params, cb) => cb(null))
-  aws.mock('S3', 'listObjectsV2', (params, cb) => {
-    cb(null, { Contents: [] })
+  afterEach(() => {
+    mockAws = null
   })
-  rm({ bucket: 'bucketlist' }, (err) => {
-    t.notOk(err, 'no error surfaced')
-    aws.restore()
-  })
-})
 
-test('delete-bucket should callback with error if S3.deleteObjects errors', t => {
-  t.plan(1)
-  aws.mock('S3', 'headBucket', (params, cb) => cb(null, {}))
-  aws.mock('S3', 'deleteBucket', (params, cb) => cb(null))
-  aws.mock('S3', 'listObjectsV2', (params, cb) => {
-    cb(null, { Contents: [ { Key: 'stone' }, { Key: 'lime' } ] })
-  })
-  aws.mock('S3', 'deleteObjects', (params, cb) => {
-    cb(true)
-  })
-  rm({ bucket: 'bucketlist' }, (err) => {
-    t.ok(err, 'error surfaced')
-    aws.restore()
-  })
-})
+  it('should callback with error if S3.listObjects errors', (t, done) => {
+    mockAws = createMockAwsClient({
+      s3: {
+        HeadBucket: () => Promise.resolve({}),
+        ListObjectsV2: () => Promise.reject(new Error('S3 error')),
+        DeleteBucket: () => Promise.resolve({}),
+      },
+    })
 
-test('delete-bucket should callback with nothing if S3.deleteObjects doesnt error', t => {
-  t.plan(1)
-  aws.mock('S3', 'headBucket', (params, cb) => cb(null, {}))
-  aws.mock('S3', 'deleteBucket', (params, cb) => cb(null))
-  aws.mock('S3', 'listObjectsV2', (params, cb) => {
-    cb(null, { Contents: [ { Key: 'stone' }, { Key: 'lime' } ] })
-  })
-  aws.mock('S3', 'deleteObjects', (params, cb) => {
-    cb()
-  })
-  rm({ bucket: 'bucketlist' }, (err) => {
-    t.notOk(err, 'no error surfaced')
-    aws.restore()
-  })
-})
-
-test('delete-bucket should work even with buckets with more than 1000 items', t => {
-  t.plan(2)
-  let Contents = []
-  for (let i = 0; i < 1337; i++) {
-    Contents.push({ Key: '' + i })
-  }
-  aws.mock('S3', 'headBucket', (params, cb) => cb(null, {}))
-  aws.mock('S3', 'deleteBucket', (params, cb) => cb(null))
-  aws.mock('S3', 'listObjectsV2', (params, cb) => {
-    cb(null, {
-      Contents: Contents.splice(0, 1000),
-      IsTruncated: Contents.length > 0,
-      NextContinuationToken: Contents.length > 0 ? 'show me the money!' : null
+    rm({ bucket: 'crabsinmahbucket', aws: mockAws }, (err) => {
+      assert.ok(err, 'error surfaced')
+      done()
     })
   })
-  let deleteCounter = 0
-  aws.mock('S3', 'deleteObjects', (params, cb) => {
-    deleteCounter++
-    cb()
-  })
-  rm({ bucket: 'bucketlist' }, (err) => {
-    t.notOk(err, 'no error surfaced')
-    t.equals(deleteCounter, 2, 'S3.deleteObjects called twice')
-    aws.restore()
-  })
-})
 
-test('delete-bucket should callback with nothing if bucket does not exist and not attempt to delete the bucket nor list nor delete its contents', t => {
-  t.plan(4)
-  let deleteCalled = false
-  let listCalled = false
-  let rmObjsCalled = false
-  aws.mock('S3', 'headBucket', (params, cb) => cb(true))
-  aws.mock('S3', 'deleteBucket', (params, cb) => {
-    deleteCalled = true
-    cb(null)
+  it('should callback with nothing if S3.listObjects returns no results', (t, done) => {
+    mockAws = createMockAwsClient({
+      s3: {
+        HeadBucket: () => Promise.resolve({}),
+        ListObjectsV2: () => Promise.resolve({ Contents: [] }),
+        DeleteBucket: () => Promise.resolve({}),
+      },
+    })
+
+    rm({ bucket: 'bucketlist', aws: mockAws }, (err) => {
+      assert.ok(!err, 'no error surfaced')
+      done()
+    })
   })
-  aws.mock('S3', 'listObjectsV2', (params, cb) => {
-    listCalled = true
-    cb(true)
+
+  it('should callback with error if S3.deleteObjects errors', (t, done) => {
+    mockAws = createMockAwsClient({
+      s3: {
+        HeadBucket: () => Promise.resolve({}),
+        ListObjectsV2: () => Promise.resolve({ Contents: [ { Key: 'stone' }, { Key: 'lime' } ] }),
+        DeleteObjects: () => Promise.reject(new Error('Delete error')),
+        DeleteBucket: () => Promise.resolve({}),
+      },
+    })
+
+    rm({ bucket: 'bucketlist', aws: mockAws }, (err) => {
+      assert.ok(err, 'error surfaced')
+      done()
+    })
   })
-  aws.mock('S3', 'deleteObjects', (params, cb) => {
-    rmObjsCalled = true
-    cb(true)
+
+  it('should callback with nothing if S3.deleteObjects doesnt error', (t, done) => {
+    mockAws = createMockAwsClient({
+      s3: {
+        HeadBucket: () => Promise.resolve({}),
+        ListObjectsV2: () => Promise.resolve({ Contents: [ { Key: 'stone' }, { Key: 'lime' } ] }),
+        DeleteObjects: () => Promise.resolve({}),
+        DeleteBucket: () => Promise.resolve({}),
+      },
+    })
+
+    rm({ bucket: 'bucketlist', aws: mockAws }, (err) => {
+      assert.ok(!err, 'no error surfaced')
+      done()
+    })
   })
-  rm({ bucket: 'crabsinmahbucket' }, (err) => {
-    t.notOk(err, 'no error surfaced')
-    t.notOk(deleteCalled, 'deleteBucket not invoked')
-    t.notOk(listCalled, 'listObjects not invoked')
-    t.notOk(rmObjsCalled, 'deleteObjects not invoked')
-    aws.restore()
+
+  it('should work even with buckets with more than 1000 items', (t, done) => {
+    let Contents = []
+    for (let i = 0; i < 1337; i++) {
+      Contents.push({ Key: '' + i })
+    }
+
+    let deleteCounter = 0
+    mockAws = createMockAwsClient({
+      s3: {
+        HeadBucket: () => Promise.resolve({}),
+        // When paginate: true is used, @aws-lite/client returns all items in Contents
+        ListObjectsV2: () => Promise.resolve({ Contents }),
+        DeleteObjects: () => {
+          deleteCounter++
+          return Promise.resolve({})
+        },
+        DeleteBucket: () => Promise.resolve({}),
+      },
+    })
+
+    rm({ bucket: 'bucketlist', aws: mockAws }, (err) => {
+      assert.ok(!err, 'no error surfaced')
+      assert.strictEqual(deleteCounter, 2, 'S3.deleteObjects called twice')
+      done()
+    })
+  })
+
+  it('should callback with nothing if bucket does not exist and not attempt to delete the bucket nor list nor delete its contents', (t, done) => {
+    let deleteCalled = false
+    let listCalled = false
+    let rmObjsCalled = false
+
+    mockAws = createMockAwsClient({
+      s3: {
+        HeadBucket: () => Promise.reject(new Error('Bucket does not exist')),
+        ListObjectsV2: () => {
+          listCalled = true
+          return Promise.reject(new Error('Should not be called'))
+        },
+        DeleteObjects: () => {
+          rmObjsCalled = true
+          return Promise.reject(new Error('Should not be called'))
+        },
+        DeleteBucket: () => {
+          deleteCalled = true
+          return Promise.resolve({})
+        },
+      },
+    })
+
+    rm({ bucket: 'crabsinmahbucket', aws: mockAws }, (err) => {
+      assert.ok(!err, 'no error surfaced')
+      assert.ok(!deleteCalled, 'deleteBucket not invoked')
+      assert.ok(!listCalled, 'listObjects not invoked')
+      assert.ok(!rmObjsCalled, 'deleteObjects not invoked')
+      done()
+    })
   })
 })
- */
